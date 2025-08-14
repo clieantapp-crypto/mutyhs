@@ -1593,12 +1593,7 @@ function ProfessionalQuoteForm() {
                                   </h4>
 
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-100"
-                                    >
-                                      {getTypeBadge(offer.type)}
-                                    </Badge>
+                                  
 
                                     {index < 3 && (
                                       <Badge
