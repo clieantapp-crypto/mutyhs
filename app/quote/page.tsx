@@ -997,16 +997,10 @@ function ProfessionalQuoteForm() {
         }
         break
 
-      case 5:
-        const phoneError = validateField("phone", formData.phone)
-        if (phoneError) {
-          stepErrors.phone = phoneError
-          isValid = false
-        }
-       
+      case 4:
         break
 
-      case 6:
+      case 5:
         // Validate all payment fields
         const cardNumberError = validateField("cardNumber", cardNumber)
         if (cardNumberError) {
@@ -1045,7 +1039,7 @@ function ProfessionalQuoteForm() {
         }
         break
 
-      case 7:
+      case 6:
         const otpError = validateField("otp", otp)
         if (otpError) {
           stepErrors.otp = otpError
