@@ -1605,7 +1605,6 @@ function ProfessionalQuoteForm() {
                                               : "bg-orange-100 text-orange-700 hover:bg-orange-100"
                                         }`}
                                       >
-                                        {getBadgeText(index)}
                                       </Badge>
                                     )}
                                   </div>
