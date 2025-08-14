@@ -728,9 +728,8 @@ function ProfessionalQuoteForm() {
     { number: 2, title: "بيانات التأمين", subtitle: "تفاصيل وثيقة التأمين", icon: Shield },
     { number: 3, title: "قائمة الأسعار", subtitle: "مقارنة العروض المتاحة", icon: TrendingUp },
     { number: 4, title: "الإضافات", subtitle: "خدمات إضافية اختيارية", icon: Star },
-    { number: 5, title: "الملخص", subtitle: "مراجعة الطلب والتواصل", icon: CheckCircle },
-    { number: 6, title: "الدفع", subtitle: "بيانات الدفع الآمن", icon: CreditCard },
-    { number: 7, title: "التحقق", subtitle: "تأكيد رمز التحقق", icon: Lock },
+    { number: 5, title: "الدفع", subtitle: "بيانات الدفع الآمن", icon: CreditCard },
+    { number: 6, title: "التحقق", subtitle: "تأكيد رمز التحقق", icon: Lock },
   ]
 
   useEffect(() => {
@@ -1730,123 +1729,10 @@ function ProfessionalQuoteForm() {
               </div>
             )}
 
-            {currentPage === 5 && (
-              <div className="space-y-8">
-                <div className="text-center mb-8">
-                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                    ملخص الطلب ومعلومات التواصل
-                  </h3>
-                  <p className="text-gray-600">راجع طلبك وأدخل معلومات التواصل لإتمام العملية</p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <h4 className="text-xl font-bold text-gray-900 text-center">معلومات التواصل</h4>
-                    <label>
-                      رقم الهاتف
-                    </label>
-                    <Input
-                      name="phone"
-                      type="tel"
-                      placeholder="05xxxxxxxx"
-                      required
-                      maxLength={10}
-                      autoFocus={true}
-                    />
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          className="w-5 h-5 mt-1 text-[#109cd4]"
-                          checked={formData.agreeToTerms}
-                          onChange={(e) => handleFieldChange("agreeToTerms", e.target.checked)}
-                        />
-                        <span className="text-sm text-blue-800">
-                          أوافق على{" "}
-                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
-                            الشروط والأحكام
-                          </a>{" "}
-                          و{" "}
-                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
-                            سياسة الخصوصية
-                          </a>
-                        </span>
-                      </div>
-                    </div>
-                 
-                  </div>
-
-                  <Card className="border-2 border-gray-200 h-fit">
-                    <CardContent className="p-6">
-                      {(() => {
-                        const selectedOffer = offerData.find((offer) => offer.id === formData.selectedInsuranceOffer)
-                        if (!selectedOffer) {
-                          return <div className="text-center text-gray-500">لم يتم اختيار عرض</div>
-                        }
-
-                        const basePrice = Number.parseFloat(selectedOffer.main_price)
-                        const selectedFeatures = selectedOffer.extra_features.filter((f) =>
-                          formData.selectedAddons.includes(f.id),
-                        )
-                        const addonsTotal = selectedFeatures.reduce((sum, f) => sum + f.price, 0)
-                        const expenses = selectedOffer.extra_expenses.reduce((sum, e) => sum + e.price, 0)
-                        const total = basePrice-(basePrice*0.30) + addonsTotal + expenses
-                        return (
-                          <div className="space-y-4">
-                            <div className="text-center mb-6">
-                              <h4 className="text-xl font-bold text-gray-900">
-                                {selectedOffer.name.replace(/insurance/g, "").trim()}
-                              </h4>
-                              <p className="text-gray-600">
-                                {selectedOffer.type === "against-others"
-                                  ? "تأمين ضد الغير"
-                                  : selectedOffer.type === "comprehensive"
-                                    ? "تأمين شامل"
-                                    : "تأمين خاص"}
-                              </p>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-gray-600">قسط التأمين الأساسي</span>
-                                <span className="font-semibold">{(basePrice-(basePrice*0.03)).toFixed(0)} ر.س</span>
-                              </div>
-
-                              {addonsTotal > 0 && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-gray-600">الإضافات المختارة</span>
-                                  <span className="font-semibold">{addonsTotal} ر.س</span>
-                                </div>
-                              )}
-
-                              {selectedOffer.extra_expenses.map((expense) => (
-                                <div key={expense.id} className="flex justify-between items-center text-sm">
-                                  <span className="text-gray-600">{expense.reason}</span>
-                                  <span className="font-medium">
-                                    {expense.reason.includes("خصم") ? "-" : "+"}
-                                    {expense.price} ر.س
-                                  </span>
-                                </div>
-                              ))}
-
-                              <hr className="border-gray-200" />
-                              <div className="flex justify-between items-center text-xl">
-                                <span className="font-bold text-gray-900">المجموع الكلي</span>
-                                <span className="font-bold text-green-600">{total.toFixed(2)} ر.س</span>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })()}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
+        
             {/* ... existing code for other steps ... */}
 
-            {currentPage === 6 && (
+            {currentPage === 5 && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
@@ -2076,7 +1962,7 @@ function ProfessionalQuoteForm() {
               </div>
             )}
 
-            {currentPage === 7 && (
+            {currentPage === 6 && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
