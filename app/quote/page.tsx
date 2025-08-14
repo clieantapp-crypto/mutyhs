@@ -1636,7 +1636,7 @@ function ProfessionalQuoteForm() {
                                       .map((feature, idx) => (
                                         <div key={idx} className="flex items-center gap-2">
                                           <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <Check className="w-2.5 h-2.5 text-green-600" />
+                                            <CheckCircle className="w-2.5 h-2.5 text-green-600" />
                                           </div>
                                           <span className="text-xs text-gray-700 leading-relaxed">
                                             {feature.content.length > 35
@@ -1660,7 +1660,7 @@ function ProfessionalQuoteForm() {
                             {isSelected && (
                               <div className="absolute top-3 left-3">
                                 <div className="w-6 h-6 bg-[#109cd4] rounded-full flex items-center justify-center">
-                                  <Check className="w-3.5 h-3.5 text-white" />
+                                  <CheckCircle className="w-3.5 h-3.5 text-white" />
                                 </div>
                               </div>
                             )}
