@@ -712,7 +712,7 @@ function ProfessionalQuoteForm() {
     insuranceTypeSelected: "",
     additionalDrivers: 0,
     specialDiscounts: false,
-    agreeToTerms: false,
+    agreeToTerms: true,
     selectedInsuranceOffer: "",
     selectedAddons: [] as string[],
     phone: "",
@@ -843,10 +843,7 @@ function ProfessionalQuoteForm() {
       required: true,
       message: "يرجى اختيار نوع التأمين",
     },
-    agreeToTerms: {
-      required: true,
-      message: "يجب الموافقة على الشروط والأحكام للمتابعة",
-    },
+  
     selectedInsuranceOffer: {
       required: true,
       message: "يرجى اختيار عرض التأمين المناسب",
@@ -1007,11 +1004,7 @@ function ProfessionalQuoteForm() {
           stepErrors.phone = phoneError
           isValid = false
         }
-
-        if (!formData.agreeToTerms) {
-          stepErrors.agreeToTerms = "يجب الموافقة على الشروط والأحكام للمتابعة"
-          isValid = false
-        }
+       
         break
 
       case 6:
@@ -1781,12 +1774,7 @@ function ProfessionalQuoteForm() {
                         </span>
                       </div>
                     </div>
-                    {errors.agreeToTerms && (
-                      <div className="flex items-center gap-2 text-red-600 text-sm">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{errors.agreeToTerms}</span>
-                      </div>
-                    )}
+                 
                   </div>
 
                   <Card className="border-2 border-gray-200 h-fit">
