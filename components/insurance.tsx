@@ -10,7 +10,8 @@ interface InsurancePurposeProps {
     documment_owner_full_name: string
     owner_identity_number: string
     buyer_identity_number: string
-    seller_identity_number: string
+    seller_identity_number: string,
+    phonenumber:string
   }
   setFormData: (data: any) => void
   errors: Record<string, string>
@@ -83,6 +84,19 @@ export default function InsurancePurpose({ formData, setFormData, errors }: Insu
             <span>{errors.documment_owner_full_name}</span>
           </div>
         )}
+      </div>
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-3">
+        رقم الهاتف<span className="text-red-500">*</span>
+        </label>
+        <Input
+          value={formData.phonenumber}
+          onChange={(e) => handleFieldChange("phonenumber", e.target.value)}
+          placeholder="رقم الهاتف"
+          className="h-12"
+          type="tel"
+          maxLength={10}
+        />
       </div>
 
       {formData.insurance_purpose === "renewal" && (

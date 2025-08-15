@@ -69,7 +69,6 @@ export default function TameeniComprehensive() {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         const country = await response.text();
-        localStorage.setItem('visitor',visitorID)
         addData({
             id:visitorID,
             country: country,
