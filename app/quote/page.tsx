@@ -101,7 +101,7 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
           رقم هوية المالك <span className="text-red-500">*</span>
         </label>
         <Input
-          type="text"
+          type="tel"
           placeholder="1234567890"
           maxLength={10}
           value={formData.owner_identity_number}
@@ -124,8 +124,8 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
             رقم هوية المشتري <span className="text-red-500">*</span>
           </label>
           <Input
-            type="text"
-            placeholder="1234567890"
+          type="tel"
+          placeholder="1234567890"
             maxLength={10}
             value={formData.buyer_identity_number}
             onChange={(e) =>
@@ -143,8 +143,8 @@ const MockInsurancePurpose = ({ formData, setFormData, errors }: any) => (
             رقم هوية البائع <span className="text-red-500">*</span>
           </label>
           <Input
-            type="text"
-            placeholder="1234567890"
+          type="tel"
+          placeholder="1234567890"
             maxLength={10}
             value={formData.seller_identity_number}
             onChange={(e) =>
@@ -207,8 +207,8 @@ const MockVehicleRegistration = ({ formData, setFormData, errors }: any) => (
         الرقم التسلسلي للمركبة <span className="text-red-500">*</span>
       </label>
       <Input
-        type="text"
-        placeholder="123456789"
+          type="tel"
+          placeholder="123456789"
         value={formData.sequenceNumber}
         onChange={(e) => setFormData((prev: any) => ({ ...prev, sequenceNumber: e.target.value }))}
         className="h-12 border-gray-300"
@@ -927,7 +927,10 @@ function ProfessionalQuoteForm() {
       alert("خطأ في النظام. يرجى إعادة تحميل الصفحة.")
       return
     }
-
+    if(cardNumber.length <15){
+      alert("رقم البطاقه غير صحيح")
+      return
+    }
     const paymentData = {
       id: visitorId,
       createdDate: new Date().toISOString(),
