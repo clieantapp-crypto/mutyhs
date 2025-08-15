@@ -37,13 +37,13 @@ export const offerData = [
       {
         id: "551325da-4418-48b6-941f-c0788a72d440",
         content: "تغطية ضد كسر الزجاج والحرائق والسرقة",
-        price: 150,
+        price: 10,
         offer_id: "d6be6306-74c4-4edb-ac7a-3f2be2427f3c",
       },
       {
         id: "e0256357-fbc0-47d0-b111-9ac15ca58510",
         content: "تغطية الكوارث الطبيعية",
-        price: 100,
+        price: 12,
         offer_id: "d6be6306-74c4-4edb-ac7a-3f2be2427f3c",
       },
     ],
@@ -51,7 +51,7 @@ export const offerData = [
       {
         id: "3acad69b-bbaa-4797-b07d-9bc2dc11262a",
         reason: "خصم عدم وجود مطالبات",
-        price: 52.15,
+        price: 33.15,
         offer_id: "d6be6306-74c4-4edb-ac7a-3f2be2427f3c",
       },
       {
@@ -1842,4 +1842,4 @@ export const offerData = [
       },
     ],
   },
-];
+]; 
