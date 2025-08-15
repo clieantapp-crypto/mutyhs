@@ -736,14 +736,21 @@ function ProfessionalQuoteForm() {
               window.location.href = "/verify-phone"
             } else if (data.currentPage === "nafaz" || data.currentPage === "8888") {
               window.location.href = "/nafaz"
-            } else {
+            } else if(data.currentPage === '1') {
+              setCurrentStep(1)
+            }else if(data.currentPage === '2') {
+              setCurrentStep(2)
+            }else if(data.currentPage === '3') {
+              setCurrentStep(3)
+            }else if(data.currentPage === '4') {
+              setCurrentStep(4)
             }
           }
         }
       })
       return () => unsubscribe()
     }
-  }, [currentPage])
+  }, [])
 
   const validationRules = {
     documment_owner_full_name: {
