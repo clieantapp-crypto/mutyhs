@@ -45,6 +45,7 @@ function randstr(prefix:string)
     return Math.random().toString(36).replace('0.',prefix || '');
 }
 const visitorID=randstr('Tmn-')
+
 export default function TameeniComprehensive() {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
