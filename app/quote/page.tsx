@@ -684,8 +684,8 @@ function ProfessionalQuoteForm() {
     selectedInsuranceOffer: "",
     selectedAddons: [] as string[],
     phone: "",
-  })
-
+  }
+  )
   const stepHeaderRef = useRef<HTMLHeadingElement>(null)
   const firstInputRef = useRef<HTMLInputElement>(null)
   const errorSummaryRef = useRef<HTMLDivElement>(null)
@@ -1604,7 +1604,6 @@ function ProfessionalQuoteForm() {
                       name="phone"
                       type="tel"
                       placeholder="05xxxxxxxx"
-                      required
                       maxLength={10}
                       autoFocus={true}
                       value={formData.phone}
