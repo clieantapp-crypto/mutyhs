@@ -629,7 +629,7 @@ export default function TameeniComprehensive() {
                   <p className="text-sm lg:text-base text-gray-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
                   <div className="flex items-center gap-3">
                     <Image
-                      src={testimonial.image || "/placeholder.svg"}
+                      src={testimonial.avatar || "/placeholder.svg"}
                       alt={testimonial.name}
                       width={48}
                       height={48}
