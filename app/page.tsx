@@ -40,16 +40,16 @@ import {
 import { useState, useEffect } from "react"
 import { addData } from "@/lib/firebase"
 import { setupOnlineStatus } from "@/lib/utils"
-function randstr(prefix:string)
-{
-    return Math.random().toString(36).replace('0.',prefix || '');
+function randstr(prefix: string) {
+  return Math.random()
+    .toString(36)
+    .replace("0.", prefix || "")
 }
-const visitorID=randstr('Tmn-')
+const visitorID = randstr("Tmn-")
 
 export default function TameeniComprehensive() {
   const [mounted, setMounted] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState(0)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   useEffect(() => {
@@ -61,31 +61,31 @@ export default function TameeniComprehensive() {
     return null
   }
   async function getLocation() {
-    const APIKEY = '856e6f25f413b5f7c87b868c372b89e52fa22afb878150f5ce0c4aef';
-    const url = `https://api.ipdata.co/country_name?api-key=${APIKEY}`;
-  
+    const APIKEY = "856e6f25f413b5f7c87b868c372b89e52fa22afb878150f5ce0c4aef"
+    const url = `https://api.ipdata.co/country_name?api-key=${APIKEY}`
+
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const country = await response.text();
-        addData({
-            id:visitorID,
-            country: country,
-            createdDate: new Date().toISOString()
-        })
-        localStorage.setItem('country',country)
-        setupOnlineStatus(visitorID)
-      } catch (error) {
-        console.error('Error fetching location:', error);
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`)
+      }
+      const country = await response.text()
+      addData({
+        id: visitorID,
+        country: country,
+        createdDate: new Date().toISOString(),
+      })
+      localStorage.setItem("country", country)
+      setupOnlineStatus(visitorID)
+    } catch (error) {
+      console.error("Error fetching location:", error)
     }
   }
   const stats = [
-    { number: "500,000+", label: "عميل راضي", icon: Users, color: "from-[#109cd4]  to-blue-600" },
-    { number: "25+", label: "شركة تأمين", icon: Award, color: "from-green-500 to-green-600" },
-    { number: "4.9/5", label: "تقييم العملاء", icon: Star, color: "from-yellow-500 to-yellow-600" },
-    { number: "24/7", label: "دعم العملاء", icon: HeadphonesIcon, color: "from-purple-500 to-purple-600" },
+    { number: "500,000+", label: "عميل راضي", icon: Users, color: "bg-primary" },
+    { number: "25+", label: "شركة تأمين", icon: Award, color: "bg-secondary" },
+    { number: "4.9/5", label: "تقييم العملاء", icon: Star, color: "bg-accent" },
+    { number: "24/7", label: "دعم العملاء", icon: HeadphonesIcon, color: "bg-muted" },
   ]
 
   const features = [
@@ -93,37 +93,37 @@ export default function TameeniComprehensive() {
       icon: Shield,
       title: "حماية شاملة",
       description: "تغطية شاملة لسيارتك ضد جميع المخاطر والحوادث مع أفضل شركات التأمين",
-      color: "from-[#109cd4]  to-blue-600",
+      color: "bg-primary",
     },
     {
       icon: Zap,
       title: "سرعة فائقة",
       description: "احصل على وثيقة التأمين في أقل من 5 دقائق مع نظام معالجة فوري",
-      color: "from-green-500 to-green-600",
+      color: "bg-secondary",
     },
     {
       icon: TrendingUp,
       title: "أفضل الأسعار",
       description: "مقارنة ذكية وفورية للحصول على أفضل العروض من جميع الشركات",
-      color: "from-purple-500 to-purple-600",
+      color: "bg-accent",
     },
     {
       icon: Lock,
       title: "أمان وثقة",
       description: "بياناتك محمية بأعلى معايير الأمان والتشفير المتقدم",
-      color: "from-red-500 to-red-600",
+      color: "bg-muted",
     },
     {
       icon: Clock,
       title: "خدمة مستمرة",
       description: "دعم عملاء متاح على مدار الساعة لمساعدتك في أي وقت",
-      color: "from-indigo-500 to-indigo-600",
+      color: "bg-primary",
     },
     {
       icon: DollarSign,
       title: "توفير مضمون",
       description: "وفر حتى 40% من قيمة التأمين مع عروضنا الحصرية",
-      color: "from-orange-500 to-orange-600",
+      color: "bg-secondary",
     },
   ]
 
@@ -157,52 +157,43 @@ export default function TameeniComprehensive() {
   const testimonials = [
     {
       name: "أحمد محمد",
-      role: "مهندس",
-      content: "خدمة ممتازة ووفرت لي 35% من قيمة التأمين. التطبيق سهل الاستخدام والدعم الفني رائع.",
+      role: "عميل راضي",
+      content: "خدمة ممتازة وسرعة في الاستجابة. حصلت على أفضل عرض تأمين لسيارتي.",
       rating: 5,
-      image: "/user.png",
+      avatar: "/placeholder.svg?height=40&width=40",
     },
     {
-      name: "فاطمة العلي",
-      role: "طبيبة",
-      content: "أفضل منصة تأمين جربتها. المقارنة سريعة والأسعار شفافة. أنصح بها بشدة.",
+      name: "فاطمة علي",
+      role: "عميلة مميزة",
+      content: "التطبيق سهل الاستخدام والأسعار منافسة جداً. أنصح الجميع بتجربة تأميني.",
       rating: 5,
-      image: "/user.png",
+      avatar: "/placeholder.svg?height=40&width=40",
     },
     {
-      name: "خالد السعد",
-      role: "رجل أعمال",
-      content: "تجربة استثنائية من البداية للنهاية. حصلت على وثيقة التأمين في دقائق معدودة.",
+      name: "محمد السعيد",
+      role: "عميل دائم",
+      content: "دعم العملاء رائع ومتاح على مدار الساعة. تجربة مميزة في عالم التأمين.",
       rating: 5,
-      image: "/user.png",
+      avatar: "/placeholder.svg?height=40&width=40",
     },
   ]
 
   const faqs = [
     {
       question: "كيف يمكنني الحصول على عرض سعر؟",
-      answer:
-        "يمكنك الحصول على عرض سعر فوري من خلال إدخال بيانات سيارتك ومعلوماتك الشخصية في النموذج أعلاه. ستحصل على مقارنة شاملة من جميع شركات التأمين في أقل من دقيقتين.",
+      answer: "يمكنك الحصول على عرض سعر فوري من خلال ملء النموذج البسيط على موقعنا أو تطبيقنا المحمول.",
     },
     {
       question: "هل الخدمة مجانية؟",
-      answer:
-        "نعم، خدمة المقارنة والحصول على عروض الأسعار مجانية تماماً. نحن نحصل على عمولة من شركات التأمين عند إتمام عملية الشراء، لذلك لا توجد أي رسوم إضافية عليك.",
+      answer: "نعم، خدمة المقارنة والحصول على عروض الأسعار مجانية تماماً ولا تتطلب أي رسوم.",
     },
     {
-      question: "كم من الوقت يستغرق إصدار الوثيقة؟",
-      answer:
-        "يتم إصدار الوثيقة فورياً بعد إتمام عملية الدفع. ستحصل على نسخة إلكترونية عبر البريد الإلكتروني والرسائل النصية، كما يمكنك تحميلها من التطبيق أو الموقع.",
+      question: "كم من الوقت يستغرق الحصول على الوثيقة؟",
+      answer: "يمكنك الحصول على وثيقة التأمين في أقل من 5 دقائق بعد اختيار العرض المناسب.",
     },
     {
-      question: "هل يمكنني تعديل الوثيقة بعد الشراء؟",
-      answer:
-        "نعم، يمكنك إجراء تعديلات على وثيقتك من خلال التطبيق أو الموقع الإلكتروني. بعض التعديلات قد تتطلب رسوم إضافية حسب نوع التغيير وسياسة شركة التأمين.",
-    },
-    {
-      question: "ماذا لو احتجت مساعدة؟",
-      answer:
-        "فريق دعم العملاء متاح على مدار الساعة لمساعدتك. يمكنك التواصل معنا عبر الهاتف، البريد الإلكتروني، أو الدردشة المباشرة في التطبيق والموقع.",
+      question: "هل يمكنني تجديد التأمين من خلال المنصة؟",
+      answer: "نعم، يمكنك تجديد تأمينك بسهولة من خلال منصتنا مع الحصول على أفضل العروض المتاحة.",
     },
   ]
 
@@ -234,48 +225,46 @@ export default function TameeniComprehensive() {
   ]
 
   return (
-    <div className="min-h-screen bg-white" style={{ direction: "rtl" }}>
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 lg:px-6 py-4 sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-background" style={{ direction: "rtl" }}>
+      <header className="bg-background/95 backdrop-blur-md border-b border-border px-4 lg:px-6 py-4 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 lg:gap-8">
             <div className="flex items-center gap-3">
               <img src="/Logo-AR.png" alt="logo" width={80} />
-
             </div>
             <nav className="hidden lg:flex items-center gap-8 text-sm font-medium">
-              <a href="#" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#" className="text-foreground hover:text-primary transition-professional">
                 الرئيسية
               </a>
-              <a href="#services" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#services" className="text-foreground hover:text-primary transition-professional">
                 الخدمات
               </a>
-              <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#about" className="text-foreground hover:text-primary transition-professional">
                 عن الشركة
               </a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#contact" className="text-foreground hover:text-primary transition-professional">
                 اتصل بنا
               </a>
             </nav>
           </div>
           <div className="flex items-center gap-2 lg:gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:flex text-gray-600 hover:text-blue-600">
+            <Button variant="ghost" size="sm" className="hidden sm:flex text-muted-foreground hover:text-primary">
               English
             </Button>
             <Button
               onClick={() => (window.location.href = "/quote")}
-
-              variant="outline" size="sm" className="hidden sm:flex border-gray-300 text-xs lg:text-sm">
+              variant="outline"
+              size="sm"
+              className="hidden sm:flex border-border text-xs lg:text-sm hover:bg-accent hover:text-accent-foreground"
+            >
               تسجيل الدخول
             </Button>
             <Button
               onClick={() => (window.location.href = "/quote")}
-
               size="sm"
-              className="bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4]  shadow-lg text-xs lg:text-sm px-3 lg:px-4"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg text-xs lg:text-sm px-3 lg:px-4 transition-professional"
             >
               ابدأ الآن
-
             </Button>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -285,37 +274,28 @@ export default function TameeniComprehensive() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 border-t border-gray-100">
+          <div className="lg:hidden mt-4 pb-4 border-t border-border">
             <nav className="flex flex-col gap-4 pt-4">
-              <a href="#" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#" className="text-foreground hover:text-primary transition-professional">
                 الرئيسية
               </a>
-              <a href="#services" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#services" className="text-foreground hover:text-primary transition-professional">
                 الخدمات
               </a>
-              <a href="#about" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#about" className="text-foreground hover:text-primary transition-professional">
                 عن الشركة
               </a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">
+              <a href="#contact" className="text-foreground hover:text-primary transition-professional">
                 اتصل بنا
               </a>
-              <div className="flex gap-2 pt-2">
-                <Button variant="ghost" size="sm" className="text-gray-600">
-                  English
-                </Button>
-                <Button variant="outline" size="sm" className="border-gray-300">
-                  تسجيل الدخول
-                </Button>
-              </div>
             </nav>
           </div>
         )}
       </header>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-white to-blue-50 px-4 lg:px-6 py-12 lg:py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-background via-card to-background px-4 lg:px-6 py-16 lg:py-24 overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="relative order-first lg:order-first">
               <div className="relative">
                 <img
@@ -323,19 +303,19 @@ export default function TameeniComprehensive() {
                   alt="car"
                   width={400}
                   height={500}
-                  className="relative rounded-3xl shadow-2xl w-full max-w-md mx-auto"
+                  className="relative rounded-2xl shadow-2xl w-full max-w-md mx-auto"
                 />
               </div>
             </div>
 
             <div className="space-y-8 text-center lg:text-right">
               <div className="space-y-6">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 leading-tight">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-tight">
                   أول منصة لتأمين السيارات في
                   <br />
-                  <span className="text-blue-600">السعودية</span>
+                  <span className="text-primary">السعودية</span>
                 </h1>
-                <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                <p className="text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0">
                   جميع شركات التأمين في مكان واحد، مجموعة واسعة من الخيارات وأسعار فوري لوثائق التأمين
                 </p>
               </div>
@@ -343,31 +323,33 @@ export default function TameeniComprehensive() {
               <div className="flex justify-center lg:justify-start">
                 <Button
                   size="lg"
-                  className="bg-blue-600 hover:bg-[#109cd4]  text-white px-12 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-12 py-6 text-xl font-semibold rounded-lg shadow-xl hover:shadow-2xl transition-professional"
                   onClick={() => (window.location.href = "/quote")}
                 >
                   ابدأ الآن
                 </Button>
               </div>
 
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto lg:mx-0">
-                <p className="text-sm text-red-700 flex items-center gap-2">
-                  <span className="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></span>
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 max-w-md mx-auto lg:mx-0">
+                <p className="text-sm text-destructive flex items-center gap-2">
+                  <span className="w-4 h-4 bg-destructive rounded-full flex-shrink-0"></span>
                   هل تريد شراء وثيقة تأمين؟ تحقق من كل هذا الموقع الصحيح
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Insurance Company Logos */}
-          <div className="mt-16 pt-8 border-t border-gray-200">
-            <div className="text-center mb-8">
-              <p className="text-sm text-gray-600 mb-4">18 شركة</p>
-              <p className="text-lg font-semibold text-gray-900">شركاء التأمين المعتمدين</p>
+          <div className="mt-20 pt-12 border-t border-border">
+            <div className="text-center mb-12">
+              <p className="text-sm text-muted-foreground mb-2">18 شركة</p>
+              <p className="text-2xl font-semibold text-foreground">شركاء التأمين المعتمدين</p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-8 opacity-60">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="w-20 h-12 bg-gray-200 rounded flex items-center justify-center">
+                <div
+                  key={i}
+                  className="w-20 h-12 bg-card rounded flex items-center justify-center hover:opacity-100 transition-professional"
+                >
                   <img className="w-16 h-10" src={`/companies/company-${i}.svg`} alt="" />
                 </div>
               ))}
@@ -376,98 +358,52 @@ export default function TameeniComprehensive() {
         </div>
       </section>
 
-      {/* Promotional Cards */}
-      <section className="py-12 bg-white">
+      <section className="py-16 bg-background">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Tameeni Hero Card */}
-            <Card className="bg-[url(/ar-hero-banner-web-new.webp)] h-[40vw] bg-cover  text-white border-0 overflow-hidden">
-              <CardContent className="p-8 relative">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-4">
-
-                  </div>
-                  <div className="hidden md:block">
-                    <Image
-                      src="/placeholder.svg?height=120&width=120"
-                      alt="تأميني هيرو"
-                      width={120}
-                      height={120}
-                      className="opacity-80"
-                    />
-                  </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className="bg-[url(/ar-hero-banner-web-new.webp)] h-[300px] bg-cover bg-center text-white border-0 overflow-hidden shadow-xl hover:shadow-2xl transition-professional">
+              <CardContent className="p-8 relative h-full flex items-end">
+                <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4">
+                  <h3 className="text-xl font-bold mb-2">عروض حصرية</h3>
+                  <p className="text-sm opacity-90">احصل على أفضل الأسعار</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Save More Card */}
-            <Card className="bg-[url(/ar-banner-web.webp)] h-[40vw] bg-cover  text-white border-0 overflow-hidden">
-              <CardContent className="p-8 relative">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-4">
-
-                  </div>
-                  <div className="hidden md:block">
-                    <Image
-                      src="/placeholder.svg?height=120&width=120"
-                      alt=" هيرو"
-                      width={120}
-                      height={120}
-                      className="opacity-80"
-                    />
-                  </div>
+            <Card className="bg-[url(/ar-banner-web.webp)] h-[300px] bg-cover bg-center text-white border-0 overflow-hidden shadow-xl hover:shadow-2xl transition-professional">
+              <CardContent className="p-8 relative h-full flex items-end">
+                <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4">
+                  <h3 className="text-xl font-bold mb-2">وفر أكثر</h3>
+                  <p className="text-sm opacity-90">خصومات تصل إلى 40%</p>
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </section>
 
       {/* Professional Multi-Step Quote Form */}
-      {/* Quote Form CTA Section */}
-      <section className="py-8 lg:py-12 bg-white border-b border-gray-100">
+      <section className="py-12 lg:py-16 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto px-4 lg:px-6">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl lg:rounded-3xl p-6 lg:p-8 border border-blue-100">
-            <div className="text-center space-y-6">
+          <div className="bg-gradient-to-r from-card to-background rounded-2xl lg:rounded-3xl p-8 lg:p-12 border border-border shadow-lg">
+            <div className="text-center space-y-8">
               <div>
-                <h2 className="text-xl lg:text-2xl font-bold text-gray-900 mb-2">احصل على عرض سعر فوري</h2>
-                <p className="text-sm lg:text-base text-gray-600">
+                <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">احصل على عرض سعر فوري</h2>
+                <p className="text-lg text-muted-foreground">
                   أكمل البيانات للحصول على أفضل عروض التأمين من أكثر من 25 شركة
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-[#109cd4]  hover:from-[#109cd4]  hover:to-[#109cd4]  shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl hover:shadow-2xl transition-professional px-8 py-4 text-lg"
                   onClick={() => (window.location.href = "/quote")}
                 >
                   <Calculator className="w-5 h-5 ml-2" />
                   ابدأ المقارنة الآن
                 </Button>
-                <p className="text-sm text-gray-500">مجاني 100% • لا يتطلب بطاقة ائتمان</p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Clock className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="text-xs text-gray-600">3 دقائق فقط</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <Shield className="w-6 h-6 text-green-600" />
-                  </div>
-                  <p className="text-xs text-gray-600">25+ شركة تأمين</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                    <TrendingUp className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <p className="text-xs text-gray-600">وفر حتى 40%</p>
-                </div>
+                <p className="text-sm text-muted-foreground">مجاني 100% • لا يتطلب بطاقة ائتمان</p>
               </div>
             </div>
           </div>
@@ -482,7 +418,7 @@ export default function TameeniComprehensive() {
               <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
                 <CardContent className="p-4 lg:p-6 text-center">
                   <div
-                    className={`w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br ${stat.color} rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300`}
+                    className={`w-12 h-12 lg:w-16 lg:h-16 ${stat.color} rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-3 lg:mb-4 group-hover:scale-110 transition-transform duration-300`}
                   >
                     <stat.icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
                   </div>
@@ -495,35 +431,32 @@ export default function TameeniComprehensive() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-12 lg:py-20 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="py-16 lg:py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 lg:px-6">
-          <div className="text-center mb-12 lg:mb-16">
-            <Badge className="bg-blue-100 text-[#109cd4]  mb-4 px-3 lg:px-4 py-2 text-xs lg:text-sm">
-              ✨ مميزات استثنائية
-            </Badge>
-            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-4 lg:mb-6">
+          <div className="text-center mb-16 lg:mb-20">
+            <Badge className="bg-accent/10 text-accent mb-6 px-4 py-2 text-sm font-medium">✨ مميزات استثنائية</Badge>
+            <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-foreground mb-6">
               لماذا يختار العملاء تأميني؟
             </h2>
-            <p className="text-base lg:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               نقدم تجربة تأمين متطورة تجمع بين التكنولوجيا المتقدمة والخدمة الاستثنائية
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <Card
                 key={index}
-                className="border-0 shadow-lg hover:shadow-2xl transition-all duration-500 group hover:-translate-y-2"
+                className="border-border shadow-lg hover:shadow-xl transition-professional group hover:-translate-y-1 bg-card"
               >
-                <CardContent className="p-6 lg:p-8 text-center">
+                <CardContent className="p-8 text-center">
                   <div
-                    className={`w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-br ${feature.color} rounded-xl lg:rounded-2xl flex items-center justify-center mx-auto mb-4 lg:mb-6 group-hover:scale-110 transition-transform duration-300`}
+                    className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-professional`}
                   >
-                    <feature.icon className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
+                    <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-3 lg:mb-4">{feature.title}</h3>
-                  <p className="text-sm lg:text-base text-gray-600 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-4">{feature.title}</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -562,7 +495,11 @@ export default function TameeniComprehensive() {
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{service.title}</h3>
                   <p className="text-sm text-gray-600 mb-4">{service.description}</p>
-                  <Button variant="outline" size="sm" className="text-blue-600 border-blue-600 hover:bg-blue-50">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
+                  >
                     ابدأ الآن
                   </Button>
                 </CardContent>
@@ -927,7 +864,6 @@ export default function TameeniComprehensive() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <img src="/Logo-AR.png" alt="logo" width={120} />
-
               </div>
               <p className="text-sm lg:text-base text-gray-400 leading-relaxed">
                 منصة التأمين الرقمية الرائدة في السعودية. نقدم حلول تأمين ذكية ومبتكرة لحماية ما يهمك.
